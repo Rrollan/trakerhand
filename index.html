@@ -1,33 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>CYBER-HAND V18: STABLE CORE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollanhandtracker</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', monospace; color: white; user-select: none; }
         
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: radial-gradient(circle at center, #111 0%, #000 100%); }
-        
-        #video-feed { position: absolute; bottom: 20px; left: 20px; width: 180px; height: 135px; z-index: 2; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3); transform: scaleX(-1); opacity: 0.5; transition: opacity 1s; object-fit: cover; }
-        
-        #ui-panel { position: absolute; top: 20px; right: 20px; width: 280px; padding: 20px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-        h2 { margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; color: #00ffff; border-bottom: 1px solid #333; padding-bottom: 10px; letter-spacing: 1px; }
-        
-        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        button { background: rgba(255, 255, 255, 0.05); border: 1px solid #444; color: #aaa; padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 11px; text-transform: uppercase; }
-        button:hover { background: #333; color: #fff; }
-        button.active { background: rgba(0, 255, 255, 0.2); border-color: #00ffff; color: #00ffff; }
-        
-        .status-box { font-size: 11px; color: #888; line-height: 1.6; }
-        .key { color: #fff; font-weight: bold; }
-        .dual { color: #ff00ff; font-weight: bold; }
-        #mode-display { font-size: 14px; color: #00ffff; font-weight: bold; margin-top: 10px; text-align: center; background: rgba(0, 255, 255, 0.1); padding: 8px; border-radius: 4px;}
+        /* LAYERS */
+        #bg-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+            background-size: cover; background-position: center;
+        }
 
-        #start-screen { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 999; display:flex; justify-content:center; align-items:center; cursor:pointer; flex-direction: column;}
-        #start-btn { font-size: 20px; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; border-radius: 50px; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
-        #start-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.5); }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: crosshair; }
         
-        #error-log { position: absolute; top: 10px; left: 10px; color: #ff3333; z-index: 1000; font-size: 12px; pointer-events: none; }
+        #video-feed { 
+            position: absolute; bottom: 20px; left: 20px; width: 160px; z-index: 2; 
+            border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3); 
+            transform: scaleX(-1); opacity: 0.5; transition: opacity 0.5s; 
+        }
+        
+        #ui-panel { 
+            position: absolute; top: 20px; right: 20px; width: 300px; 
+            padding: 20px; background: rgba(15, 15, 15, 0.95); 
+            backdrop-filter: blur(15px); border-radius: 16px; 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            z-index: 10; transition: transform 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            max-height: 90vh; overflow-y: auto;
+        }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
+        h2 { margin: 0; font-size: 14px; color: #00ffff; letter-spacing: 1px; }
+        #hide-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; }
+        #hide-btn:hover { color: #fff; }
+
+        .control-row { margin-bottom: 12px; }
+        .label { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 4px; text-transform: uppercase; }
+        
+        input[type=range] { width: 100%; -webkit-appearance: none; background: #333; height: 4px; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #00ffff; border-radius: 50%; cursor: pointer; border: 2px solid #000; }
+        
+        /* MODE SWITCHER */
+        .mode-switch { display: flex; gap: 5px; margin-bottom: 15px; background: #222; padding: 4px; border-radius: 8px; }
+        .mode-btn { 
+            flex: 1; padding: 8px; border: none; background: transparent; color: #888; 
+            font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; 
+        }
+        .mode-btn.active { background: #00ffff; color: #000; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+
+        .file-upload {
+            display: block; width: 100%; padding: 10px 0; text-align: center;
+            background: rgba(255,255,255,0.05); border: 1px dashed #555;
+            color: #888; font-size: 10px; cursor: pointer; border-radius: 6px;
+            transition: 0.2s; margin-bottom: 5px; box-sizing: border-box;
+        }
+        .file-upload:hover { border-color: #00ffff; color: #00ffff; }
+        input[type="file"] { display: none; }
+        input[type="color"] { border: none; width: 100%; height: 25px; background: none; cursor: pointer; padding: 0;}
+
+        .shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 15px; }
+        .shape-btn { background: #222; border: 1px solid #444; color: #ccc; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: 0.2s; text-transform: uppercase;}
+        .shape-btn:hover { background: #333; color: #fff; }
+        .shape-btn.active { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.1); }
+
+        #clear-btn { width: 100%; padding: 10px; background: #440000; color: #ff5555; margin-top: 5px; border: 1px solid #660000; border-radius: 6px; cursor: pointer;}
+        #clear-btn:hover { background: #660000; color: #fff; }
+
+        .status { font-size: 11px; color: #888; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; line-height: 1.6; }
+        .key { color: #fff; font-weight: bold; }
+        #mode-disp { text-align: center; color: #00ffff; font-weight: bold; font-size: 13px; margin-top: 5px; letter-spacing: 1px; padding: 5px; background: rgba(0,255,255,0.1); border-radius: 4px;}
+
+        #loader { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:99; display:flex; justify-content:center; align-items:center; color:#00ffff; font-size:14px; transition: opacity 0.5s; }
+        #ui-hint { position: absolute; top: 20px; right: 20px; color: rgba(255,255,255,0.3); font-size: 12px; display: none; pointer-events: none; z-index: 5; }
+        
+        #start-screen { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 999; display:flex; justify-content:center; align-items:center; cursor:pointer; flex-direction: column;}
+        #start-btn { font-size: 20px; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; border-radius: 50px; background: transparent; transition: 0.3s; }
+        #start-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.6); }
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -36,44 +87,138 @@
 </head>
 <body>
 
-    <div id="start-screen" onclick="initSystem()">
-        <div id="start-btn">START SYSTEM</div>
-        <div style="margin-top:15px; color:#666; font-size:12px;">Enables Audio & Physics Engine</div>
+    <div id="bg-layer"></div>
+    <div id="loader">ИНИЦИАЛИЗАЦИЯ...</div>
+
+    <div id="start-screen" onclick="initAudio()">
+        <button id="start-btn">ЗАПУСК СИСТЕМЫ</button>
+        <div style="margin-top:15px; color:#666; font-size:12px;">Audio | Physics | WebGL</div>
     </div>
 
-    <div id="error-log"></div>
+    <div id="ui-hint">Настройки</div>
 
     <div id="ui-panel">
-        <h2>Control V18</h2>
-        <div class="grid-buttons" id="shape-buttons">
-            <button onclick="setShape('sphere')" class="active">Sphere</button>
-            <button onclick="setShape('galaxy')">Galaxy</button>
-            <button onclick="setShape('heart')">Heart</button>
-            <button onclick="setShape('cube')">Cube</button>
+        <div class="header">
+            <h2>V50 GRANDMASTER</h2>
+            <button id="hide-btn" onclick="toggleUI()">✕</button>
         </div>
-        <div class="status-box">
-            <div><span class="dual">👐 Two Hands:</span> ROTATE & SCATTER</div>
-            <div><span class="key">👋 One Hand:</span> SPIN (Inertia)</div>
-            <div><span class="key">✊ Fist:</span> GRAB & PASS</div>
-            <div><span class="key">☝️ Index:</span> MOVE</div>
-            <div><span class="key">✌️ Victory:</span> RESIZE</div>
-            <div id="mode-display">IDLE</div>
-            <div id="debug-info" style="text-align:center; margin-top:5px;">Waiting for camera...</div>
+
+        <div class="mode-switch">
+            <button class="mode-btn active" id="btn-view" onclick="setAppMode('VIEW')">👁 ПРОСМОТР</button>
+            <button class="mode-btn" id="btn-draw" onclick="setAppMode('DRAW')">🖌 РИСОВАНИЕ</button>
+        </div>
+
+        <!-- РИСОВАНИЕ -->
+        <div id="draw-controls" style="display:none;">
+            <div style="text-align:center; font-size:11px; color:#fff; margin-bottom:10px; background: rgba(0,255,255,0.1); padding: 10px; border-radius: 6px;">
+                1. <b>ЛКМ</b> или <b>КУЛАК</b> — Рисовать<br>
+                2. Жест <b>ОК</b> — Сохранить
+            </div>
+            <button id="clear-btn" onclick="clearCanvas()">ОЧИСТИТЬ ХОЛСТ</button>
+        </div>
+
+        <!-- ПРОСМОТР -->
+        <div id="view-controls">
+            <div class="control-row">
+                <label class="file-upload">
+                    ЗАГРУЗИТЬ ФОН
+                    <input type="file" id="bg-input" accept="image/*">
+                </label>
+                <label class="file-upload" style="border-color: #00ffff; color: #00ffff;">
+                    ТЕКСТУРА ОБЪЕКТА (ФОТО)
+                    <input type="file" id="tex-input" accept="image/*">
+                </label>
+            </div>
+
+            <div class="control-row">
+                <div class="label"><span>Цвет</span></div>
+                <input type="color" id="color-input" value="#00ffff">
+            </div>
+
+            <div class="control-row">
+                <div class="label"><span>Размер</span><span id="val-size">0.08</span></div>
+                <input type="range" min="0.02" max="0.3" step="0.01" value="0.08" oninput="updateParam('size', this.value)">
+            </div>
+
+            <div class="control-row">
+                <div class="label"><span>Инерция (Трение)</span><span id="val-speed">0.96</span></div>
+                <input type="range" min="0.80" max="0.99" step="0.01" value="0.96" oninput="updateParam('friction', this.value)">
+            </div>
+
+            <div class="shape-grid">
+                <button class="shape-btn active" onclick="setShape('sphere', this)">Сфера</button>
+                <button class="shape-btn" onclick="setShape('galaxy', this)">Галактика</button>
+                <button class="shape-btn" onclick="setShape('heart', this)">Сердце</button>
+                <button class="shape-btn" onclick="setShape('cube', this)">Куб</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <div id="status-text">
+                <div><span class="key">✊ Кулак:</span> ПЕРЕМЕЩЕНИЕ</div>
+                <div><span class="key">👋 Ладонь:</span> ВРАЩЕНИЕ</div>
+                <div><span class="key">👌 Жест ОК:</span> РАЗМЕР (Вверх/Вниз)</div>
+                <div><span class="key">👐 Две руки:</span> РАСТЯГИВАТЬ</div>
+            </div>
+            <div id="mode-disp">ОЖИДАНИЕ</div>
         </div>
     </div>
 
     <video id="video-feed" playsinline></video>
-    <div id="canvas-container"></div>
+    <div id="canvas-container" onclick="showUI()"></div>
 
     <script>
-        // --- ERROR HANDLING ---
-        window.onerror = function(msg, url, line) {
-            document.getElementById('error-log').innerHTML += `<br>Error: ${msg}`;
+        // --- SAFE INIT ---
+        window.onerror = function(msg, url, line) { 
+            console.error(`Err: ${msg} line ${line}`); 
+            if(document.getElementById('loader')) document.getElementById('loader').style.display='none'; 
         };
 
-        // --- AUDIO ENGINE (Simple & Soft) ---
+        const CONFIG = {
+            count: 15000, 
+            size: 0.08,   
+            shape: 'sphere',
+            hue: 0.5,
+            spinFriction: 0.96, 
+            bounds: { x: 16, y: 10 },
+            appMode: 'VIEW',
+            useTexture: false
+        };
+
+        const STATE = {
+            // Vectors - Initialized Immediately
+            pos: new THREE.Vector3(0,0,0),    
+            vel: new THREE.Vector3(0,0,0),    
+            rotVel: {x:0, y:0},
+            
+            hand1: new THREE.Vector3(0,0,0), 
+            hand2: new THREE.Vector3(0,0,0),
+            prevHand: new THREE.Vector3(0,0,0), 
+            smoothHand: new THREE.Vector3(0,0,0),
+            
+            mouse: new THREE.Vector2(),
+            mouseWorld: new THREE.Vector3(),
+            lastDrawPos: new THREE.Vector3(0,0,0),
+
+            drawIndex: 0,
+            isMouseDrawing: false,
+            isHandDrawing: false,
+            
+            activeHandId: 0,
+            scale: 1.0,
+            entropy: 0.0,
+            mode: 'IDLE',
+            
+            scatterOffset: new Float32Array(CONFIG.count * 3),
+            originalColors: new Float32Array(CONFIG.count * 3),
+            
+            resizeBaseY: 0,
+            resizeBaseS: 1.0
+        };
+
+        // --- AUDIO ---
         const AudioSys = {
-            ctx: null, active: false,
+            ctx: null, masterGain: null, active: false,
             init: function() {
                 if(this.active) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -84,60 +229,98 @@
                 this.active = true;
                 document.getElementById('start-screen').style.display = 'none';
             },
-            playTone: function(freq, type='sine', dur=0.1) {
+            playTone: function(freq, type='sine') {
                 if(!this.active) return;
                 const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, t);
+                osc.type = type; osc.frequency.setValueAtTime(freq, t);
                 const g = this.ctx.createGain();
-                g.gain.setValueAtTime(0.1, t);
-                g.gain.linearRampToValueAtTime(0, t+dur);
+                g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.2);
                 osc.connect(g); g.connect(this.masterGain);
-                osc.start(); osc.stop(t+dur);
+                osc.start(); osc.stop(t+0.2);
             }
         };
 
-        function initSystem() { AudioSys.init(); }
+        function initAudio() { AudioSys.init(); }
 
-        // --- CONFIG ---
-        const CONFIG = { count: 8000, size: 0.12, shape: 'sphere' };
-        
-        // --- STATE (The Brain) ---
-        const STATE = {
-            pos: new THREE.Vector3(0,0,0),    
-            vel: new THREE.Vector3(0,0,0),    
-            momentum: new THREE.Vector3(0,0,0),
-            
-            // Interaction
-            handPos1: new THREE.Vector3(0,0,0), 
-            handPos2: new THREE.Vector3(0,0,0),
-            prevHandPos1: new THREE.Vector3(0,0,0),
-            
-            rotVel: {x:0, y:0},
-            scale: 1.0,
-            entropy: 0.0,
-            mode: 'IDLE',
-            
-            scatterOffset: new Float32Array(CONFIG.count * 3)
-        };
+        // --- UI FUNCTIONS ---
+        function toggleUI() { document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block'; }
+        function showUI() { document.getElementById('ui-panel').style.transform = 'translateX(0)'; document.getElementById('ui-hint').style.display='none'; }
 
-        // --- THREE.JS ---
+        function setAppMode(mode) {
+            CONFIG.appMode = mode;
+            document.getElementById('btn-view').className = mode === 'VIEW' ? 'mode-btn active' : 'mode-btn';
+            document.getElementById('btn-draw').className = mode === 'DRAW' ? 'mode-btn active' : 'mode-btn';
+            
+            document.getElementById('view-controls').style.display = mode === 'VIEW' ? 'block' : 'none';
+            document.getElementById('draw-controls').style.display = mode === 'DRAW' ? 'block' : 'none';
+            
+            if(mode === 'DRAW') {
+                CONFIG.shape = 'custom';
+                STATE.drawIndex = 0;
+                // Hide existing particles
+                for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
+                STATE.pos.set(0,0,0); STATE.vel.set(0,0,0); STATE.rotVel = {x:0, y:0};
+                STATE.scale = 1.0;
+                document.getElementById('status-text').innerHTML = "";
+            } else {
+                document.getElementById('status-text').innerHTML = `
+                    <div><span class="key">✊ Кулак:</span> ТАЩИТЬ</div>
+                    <div><span class="key">👋 Ладонь:</span> ВРАЩАТЬ</div>
+                    <div><span class="key">👌 Жест ОК:</span> РАЗМЕР</div>
+                `;
+            }
+        }
+
+        function clearCanvas() {
+            if(CONFIG.appMode !== 'DRAW') return;
+            STATE.drawIndex = 0;
+            for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
+            AudioSys.playTone(300, 'triangle');
+        }
+
+        // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ПАРАМЕТРОВ ---
+        function updateParam(k, v) {
+            if(k==='size') { 
+                CONFIG.size=parseFloat(v); 
+                material.size=CONFIG.size; 
+                document.getElementById('val-size').innerText=v; 
+            }
+            if(k==='friction') { 
+                CONFIG.spinFriction = parseFloat(v); 
+                document.getElementById('val-speed').innerText = v; // Теперь текст обновляется
+            }
+        }
+
+        document.getElementById('color-input').addEventListener('input', e => {
+            const c = new THREE.Color(e.target.value);
+            const hsl = {}; c.getHSL(hsl);
+            CONFIG.hue = hsl.h;
+            CONFIG.useTexture = false; material.blending = THREE.AdditiveBlending; 
+        });
+        document.getElementById('bg-input').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
+        });
+
+        // --- THREE.JS SETUP ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         camera.position.z = 8;
-        
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Texture
+        const raycaster = new THREE.Raycaster();
+        const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
         function getTexture() {
             const c = document.createElement('canvas'); c.width=64; c.height=64;
             const ctx = c.getContext('2d');
             const g = ctx.createRadialGradient(32,32,0,32,32,32);
             g.addColorStop(0,'rgba(255,255,255,1)');
-            g.addColorStop(0.4,'rgba(100,200,255,0.5)');
+            g.addColorStop(0.2,'rgba(200,200,255,0.8)');
+            g.addColorStop(0.5,'rgba(255,255,255,0.2)');
             g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(c);
@@ -146,279 +329,338 @@
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(CONFIG.count * 3);
         const colors = new Float32Array(CONFIG.count * 3);
-        const shapes = { sphere: [], galaxy: [], heart: [], cube: [] };
+        const shapes = { sphere: [], galaxy: [], heart: [], cube: [], custom: [] };
         const c3 = new THREE.Color();
 
-        // Init Data
         for(let i=0; i<CONFIG.count; i++) {
-            // Sphere
             const phi = Math.acos(-1 + (2*i)/CONFIG.count);
             const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
             shapes.sphere.push(2.5*Math.cos(theta)*Math.sin(phi), 2.5*Math.sin(theta)*Math.sin(phi), 2.5*Math.cos(phi));
             
-            // Galaxy
-            const angle = i*0.1; const r = (i/CONFIG.count)*6;
-            shapes.galaxy.push((r*Math.cos(angle)), (Math.random()-0.5)*0.5, (r*Math.sin(angle)));
+            const ang = i*0.1; const r = (i/CONFIG.count)*6;
+            shapes.galaxy.push(r*Math.cos(ang), (Math.random()-0.5)*0.5, r*Math.sin(ang));
             
-            // Heart
             const t = (i/CONFIG.count)*Math.PI*2;
             const hx = 16*Math.pow(Math.sin(t),3);
             const hy = 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
             shapes.heart.push(hx*0.15, hy*0.15, (Math.random()-0.5));
             shapes.cube.push((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
-
-            c3.setHSL(i/CONFIG.count, 0.8, 0.6);
-            colors[i*3]=c3.r; colors[i*3+1]=c3.g; colors[i*3+2]=c3.b;
-            STATE.scatterOffset[i*3] = (Math.random()-0.5)*15;
-            STATE.scatterOffset[i*3+1] = (Math.random()-0.5)*15;
-            STATE.scatterOffset[i*3+2] = (Math.random()-0.5)*15;
+            shapes.custom.push(99999,99999,99999);
+            
+            STATE.scatterOffset[i*3] = (Math.random()-0.5)*20;
+            STATE.scatterOffset[i*3+1] = (Math.random()-0.5)*20;
+            STATE.scatterOffset[i*3+2] = (Math.random()-0.5)*20;
         }
 
         positions.set(shapes.sphere);
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        const material = new THREE.PointsMaterial({
-            size: CONFIG.size, map: getTexture(), vertexColors: true,
-            blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 1.0
-        });
+        const material = new THREE.PointsMaterial({ size: CONFIG.size, map: getTexture(), vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
         const particles = new THREE.Points(geometry, material);
         scene.add(particles);
 
-        // --- ANIMATION ---
-        window.setShape = (n) => {
+        // TEXTURE LOADER LOGIC
+        const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
+        document.getElementById('tex-input').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if(f) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const img = new Image();
+                    img.onload = () => {
+                        mapCanvas.width = img.width; mapCanvas.height = img.height;
+                        mapCtx.drawImage(img,0,0);
+                        const data = mapCtx.getImageData(0,0,img.width,img.height).data;
+                        for(let i=0; i<CONFIG.count; i++) {
+                            const phi = Math.acos(-1 + (2*i)/CONFIG.count);
+                            const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
+                            let u = (theta % (2*Math.PI))/(2*Math.PI);
+                            let v = phi / Math.PI;
+                            const px = Math.floor(u*img.width); const py = Math.floor(v*img.height);
+                            const idx = (py*img.width+px)*4;
+                            STATE.originalColors[i*3] = data[idx]/255;
+                            STATE.originalColors[i*3+1] = data[idx+1]/255;
+                            STATE.originalColors[i*3+2] = data[idx+2]/255;
+                        }
+                        CONFIG.useTexture = true;
+                        material.blending = THREE.NormalBlending;
+                        CONFIG.size = 0.05; material.size = 0.05;
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(f);
+            }
+        });
+
+        // CURSOR
+        const cursorGeo = new THREE.RingGeometry(0.1, 0.15, 32);
+        const cursorMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+        const cursor = new THREE.Mesh(cursorGeo, cursorMat);
+        scene.add(cursor); cursor.visible = false;
+
+        window.setShape = (n, btn) => {
             CONFIG.shape = n;
-            document.querySelectorAll('#shape-buttons button').forEach(b=>b.classList.remove('active'));
-            event.target.classList.add('active');
+            setAppMode('VIEW');
+            document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
         }
 
+        window.addEventListener('mousemove', e => {
+            STATE.mouse.x = (e.clientX/window.innerWidth)*2 - 1;
+            STATE.mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
+            raycaster.setFromCamera(STATE.mouse, camera);
+            raycaster.ray.intersectPlane(drawPlane, STATE.mouseWorld);
+        });
+        window.addEventListener('mousedown', () => { if(CONFIG.appMode === 'DRAW') STATE.isMouseDrawing = true; });
+        window.addEventListener('mouseup', () => STATE.isMouseDrawing = false);
+
+        // --- ANIMATION ---
         function animate() {
             requestAnimationFrame(animate);
+            if(isNaN(STATE.pos.x)) STATE.pos.set(0,0,0);
 
-            // NAN PROTECTION (Safety check)
-            if (isNaN(STATE.pos.x)) STATE.pos.set(0,0,0);
-            if (isNaN(STATE.rotVel.x)) STATE.rotVel = {x:0, y:0};
+            STATE.smoothHand.lerp(STATE.hand1, 0.2); 
 
             const targetShape = shapes[CONFIG.shape];
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
-            const time = Date.now() * 0.001;
+
+            // DRAWING LOGIC
+            if(CONFIG.appMode === 'DRAW') {
+                cursor.visible = true;
+                let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
+                
+                if(STATE.isHandDrawing || STATE.activeHandId===1) cursor.position.copy(STATE.smoothHand);
+                else cursor.position.copy(STATE.mouseWorld);
+
+                if(inputPos) {
+                    cursor.material.color.setHex(0xff00ff);
+                    const dist = inputPos.distanceTo(STATE.lastDrawPos);
+                    
+                    if(dist > 0.05 || STATE.drawIndex === 0) {
+                        const steps = Math.min(20, Math.ceil(dist/0.03));
+                        for(let s=0; s<=steps; s++) {
+                            if(STATE.drawIndex >= CONFIG.count) break;
+                            const t = s/steps;
+                            const v = new THREE.Vector3().lerpVectors(STATE.lastDrawPos, inputPos, t);
+                            const idx = STATE.drawIndex*3;
+                            shapes.custom[idx]=v.x; shapes.custom[idx+1]=v.y; shapes.custom[idx+2]=v.z;
+                            STATE.drawIndex++;
+                        }
+                        STATE.lastDrawPos.copy(inputPos);
+                    }
+                } else {
+                    cursor.material.color.setHex(0x00ff00);
+                    if(STATE.activeHandId) STATE.lastDrawPos.copy(STATE.smoothHand);
+                    else STATE.lastDrawPos.copy(STATE.mouseWorld);
+                }
+            } else {
+                cursor.visible = false;
+            }
 
             for(let i=0; i<CONFIG.count; i++) {
                 const ix = i*3;
                 let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
 
-                if(STATE.mode === 'GRAB') { tx *= 0.8; ty *= 0.8; tz *= 0.8; tx+=(Math.random()-0.5)*0.2; }
+                if(STATE.mode === 'GRAB') { tx *= 0.85; ty *= 0.85; tz *= 0.85; tx+=(Math.random()-0.5)*0.2; }
 
-                // Entropy Mixing
                 if (STATE.entropy > 0.01) {
                     tx = tx*(1-STATE.entropy) + STATE.scatterOffset[ix]*STATE.entropy;
                     ty = ty*(1-STATE.entropy) + STATE.scatterOffset[ix+1]*STATE.entropy;
                     tz = tz*(1-STATE.entropy) + STATE.scatterOffset[ix+2]*STATE.entropy;
                 }
 
-                posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.1;
-                posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.1;
-                posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.1;
+                let lerpSpeed = (CONFIG.appMode === 'DRAW') ? 0.5 : 0.1;
+                posAttr.array[ix] += (tx - posAttr.array[ix]) * lerpSpeed;
+                posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * lerpSpeed;
+                posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * lerpSpeed;
 
-                // Color
-                let h=(i/CONFIG.count+time*0.1)%1; let s=0.8; let l=0.6;
-                if(STATE.mode === 'GRAB') { h=0.55; s=0.2; l=1.0; }
-                else if(STATE.mode === 'DUAL') { h=0.7 - (STATE.entropy*0.4); s=1.0; l=0.6 + STATE.entropy*0.4; }
-                else if(STATE.mode === 'MOVE') { h=0.6; s=0.9; l=0.7; }
-                else if(STATE.mode === 'ROTATE') { h=0.1; s=1.0; l=0.6; }
-                
-                c3.setHSL(h,s,l);
-                colAttr.array[ix]=c3.r; colAttr.array[ix+1]=c3.g; colAttr.array[ix+2]=c3.b;
+                if(CONFIG.useTexture) {
+                    colAttr.array[ix] = STATE.originalColors[ix];
+                    colAttr.array[ix+1] = STATE.originalColors[ix+1];
+                    colAttr.array[ix+2] = STATE.originalColors[ix+2];
+                } else {
+                    let h = CONFIG.hue + (i/CONFIG.count)*0.1; 
+                    let s = 0.8, l = 0.6;
+                    if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) l=1.0;
+                    if(STATE.mode === 'GRAB') s=0.0;
+                    c3.setHSL(h%1.0, s, l);
+                    colAttr.array[ix]=c3.r; colAttr.array[ix+1]=c3.g; colAttr.array[ix+2]=c3.b;
+                }
             }
             posAttr.needsUpdate = true; colAttr.needsUpdate = true;
 
-            // PHYSICS LOGIC
-            if (STATE.mode === 'MOVE' || STATE.mode === 'GRAB') {
-                const delta = new THREE.Vector3().subVectors(STATE.handPos1, STATE.prevHandPos1);
-                STATE.momentum.lerp(delta, 0.2);
+            // PHYSICS (VIEW MODE)
+            if(CONFIG.appMode === 'VIEW') {
+                const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
+
+                if (STATE.mode === 'GRAB') {
+                    STATE.pos.lerp(activePos, 0.2); 
+                    STATE.rotVel.x *= 0.8; STATE.rotVel.y *= 0.8;
+                }
+                else if (STATE.mode === 'DUAL') {
+                    const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
+                    STATE.pos.lerp(mid, 0.1);
+                    const dx = STATE.hand2.x - STATE.hand1.x;
+                    const dy = STATE.hand2.y - STATE.hand1.y;
+                    particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
+                }
+                else if (STATE.mode === 'ROTATE') {
+                    const dX = activePos.x - STATE.prevHand.x;
+                    const dY = activePos.y - STATE.prevHand.y;
+                    STATE.rotVel.y += dX * 0.2;
+                    STATE.rotVel.x += -dY * 0.2;
+                    STATE.vel.multiplyScalar(0.9);
+                }
+                else {
+                    STATE.pos.add(STATE.vel);
+                    // --- ИСПРАВЛЕНИЕ ФИЗИКИ НИЖЕ ---
+                    STATE.vel.multiplyScalar(CONFIG.spinFriction); // Применяем инерцию к движению
+                    // -------------------------------
+                    if(STATE.pos.x > 16 || STATE.pos.x < -16) STATE.vel.x *= -0.7;
+                    if(STATE.pos.y > 10 || STATE.pos.y < -10) STATE.vel.y *= -0.7;
+                    particles.rotation.y += 0.002;
+                }
+
+                particles.rotation.x += STATE.rotVel.x * 0.1;
+                particles.rotation.y += STATE.rotVel.y * 0.1;
+                STATE.rotVel.x *= CONFIG.spinFriction; STATE.rotVel.y *= CONFIG.spinFriction;
+
+                STATE.scale += (STATE.scale - STATE.scale) * 0.1; 
+                particles.scale.setScalar(STATE.scale);
+                particles.position.copy(STATE.pos);
+                STATE.prevHand.copy(activePos);
+            } else {
+                // RESET IN DRAW
+                particles.position.set(0,0,0);
+                particles.rotation.set(0,0,0);
+                particles.scale.setScalar(1);
             }
 
-            if (STATE.mode === 'MOVE') {
-                STATE.pos.lerp(STATE.handPos1, 0.2);
-                STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9; // Stop spin
-            } 
-            else if (STATE.mode === 'GRAB') {
-                STATE.pos.lerp(STATE.handPos1, 0.4); // Snappy
-                STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
-            }
-            else if (STATE.mode === 'DUAL') {
-                // Midpoint
-                const mid = new THREE.Vector3().addVectors(STATE.handPos1, STATE.handPos2).multiplyScalar(0.5);
-                STATE.pos.lerp(mid, 0.1);
-                
-                // Rotation Steering
-                const dx = STATE.handPos2.x - STATE.handPos1.x;
-                const dy = STATE.handPos2.y - STATE.handPos1.y;
-                const angle = Math.atan2(dy, dx);
-                particles.rotation.z += (angle - particles.rotation.z) * 0.1;
-                
-                STATE.vel.set(0,0,0);
-            }
-            else if (STATE.mode === 'DRIFT' || STATE.mode === 'ROTATE') {
-                // Inertia Drift
-                STATE.pos.add(STATE.vel);
-                STATE.vel.multiplyScalar(0.98); 
-                
-                // Rotational Inertia
-                particles.rotation.x += STATE.rotVel.x;
-                particles.rotation.y += STATE.rotVel.y;
-                STATE.rotVel.x *= 0.98;
-                STATE.rotVel.y *= 0.98;
-
-                // Bounce
-                if(STATE.pos.x > 16 || STATE.pos.x < -16) STATE.vel.x *= -0.7;
-                if(STATE.pos.y > 10 || STATE.pos.y < -10) STATE.vel.y *= -0.7;
-            } 
-            else if (STATE.mode === 'RESIZE') {
-                let s = 1.0 + (STATE.handPos1.y * 0.4);
-                STATE.scale += (s - STATE.scale) * 0.1;
-            }
-            else {
-                // Idle Rotation
-                particles.rotation.y += 0.002;
-            }
-
-            particles.position.copy(STATE.pos);
-            particles.scale.setScalar(STATE.scale);
-            
-            STATE.prevHandPos1.copy(STATE.handPos1);
             renderer.render(scene, camera);
         }
 
         // --- TRACKING ---
-        const uiMode = document.getElementById('mode-display');
-        const uiDebug = document.getElementById('debug-info');
+        const uiMode = document.getElementById('mode-disp');
+        const loader = document.getElementById('loader');
         const videoElement = document.getElementById('video-feed');
 
         function onResults(results) {
-            const handsCount = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
-            uiDebug.innerText = `Hands Detected: ${handsCount}`;
+            if(loader) loader.style.display = 'none';
+            const count = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
 
-            // Hand 1 (Always exists if count > 0)
-            let h1 = null, x1=0, y1=0;
-            if (handsCount > 0) {
+            let h1=null, h2=null;
+            let x1=0, y1=0, x2=0, y2=0;
+
+            if (count > 0) {
                 const lm1 = results.multiHandLandmarks[0];
-                h1 = analyzeHand(lm1);
-                x1 = (1 - lm1[9].x - 0.5) * 20; 
-                y1 = (1 - lm1[9].y - 0.5) * 12;
+                h1 = analyze(lm1);
+                x1 = (1 - lm1[9].x - 0.5) * 25; y1 = (1 - lm1[9].y - 0.5) * 15;
             }
-
-            // Hand 2
-            let h2 = null, x2=0, y2=0;
-            if (handsCount > 1) {
+            if (count > 1) {
                 const lm2 = results.multiHandLandmarks[1];
-                h2 = analyzeHand(lm2);
-                x2 = (1 - lm2[9].x - 0.5) * 20; 
-                y2 = (1 - lm2[9].y - 0.5) * 12;
-                STATE.handPos2.set(x2, y2, 0);
+                h2 = analyze(lm2);
+                x2 = (1 - lm2[9].x - 0.5) * 25; y2 = (1 - lm2[9].y - 0.5) * 15;
+                STATE.hand2.set(x2, y2, 0);
             }
 
-            // --- LOGIC TREE ---
+            // DRAW MODE LOGIC
+            if(CONFIG.appMode === 'DRAW') {
+                if(h1 && h1.isPinch) { // OK Gesture -> Save
+                    setAppMode('VIEW');
+                    AudioSys.playTone(600);
+                    return;
+                }
+                if(h1 && h1.isGrab) {
+                    STATE.activeHandId = 1;
+                    STATE.hand1.set(x1, y1, 0);
+                    STATE.isHandDrawing = true;
+                    updateMode('РИСУЕМ (КУЛАК)');
+                } else {
+                    STATE.isHandDrawing = false;
+                    if(h1) { STATE.hand1.set(x1,y1,0); STATE.activeHandId = 1; }
+                    updateMode(STATE.isMouseDrawing ? 'РИСУЕМ (МЫШЬ)' : 'КУРСОР');
+                }
+                return;
+            }
 
-            // 1. DUAL HANDS
-            if (handsCount === 2 && h1.fingers >= 3 && h2.fingers >= 3) {
-                STATE.handPos1.set(x1, y1, 0);
-                // Calculate Entropy based on distance
-                const dist = STATE.handPos1.distanceTo(STATE.handPos2);
-                // Safe < 6, Chaos > 6
+            // VIEW MODE LOGIC
+            if (count === 2 && !h1.isGrab && !h2.isGrab) {
+                STATE.hand1.set(x1, y1, 0);
+                const dist = STATE.hand1.distanceTo(STATE.hand2);
                 STATE.entropy = (dist < 6.0) ? 0 : Math.min(1.0, (dist - 6.0)/8.0);
-                
                 updateMode('DUAL');
                 return;
             } else {
-                STATE.entropy = 0; // Reset chaos if not dual
+                STATE.entropy = 0;
             }
 
-            // 2. PASSING (Juggling Logic)
-            if (handsCount === 2) {
-                // If Hand 2 grabs, it takes control
-                if (h2.isGrab) {
-                    STATE.handPos1.set(x2, y2, 0); // Active follows Hand 2
-                    if(STATE.mode !== 'GRAB') AudioSys.playTone(150, 'sine');
-                    updateMode('GRAB');
-                    return;
-                }
-            }
-
-            if (handsCount > 0) {
-                STATE.handPos1.set(x1, y1, 0);
+            if (count > 0) {
+                if (h2 && h2.isGrab) { STATE.activeHandId = 2; updateMode('GRAB'); return; }
+                STATE.activeHandId = 1;
+                STATE.hand1.set(x1, y1, 0);
 
                 if (h1.isGrab) {
-                    if(STATE.mode !== 'GRAB') AudioSys.playTone(150, 'sine');
                     updateMode('GRAB');
                     return;
                 }
-                
-                if (h1.isVictory) { updateMode('RESIZE'); return; }
-                if (h1.isIndexOnly) { updateMode('MOVE'); return; }
 
-                // Open Palm -> SPIN or DRIFT
-                if (h1.fingers >= 4) {
-                    // Check hand speed for Throw vs Spin
-                    const speed = STATE.handPos1.distanceTo(STATE.prevHandPos1);
-                    
-                    if (STATE.mode === 'GRAB' || STATE.mode === 'MOVE') {
-                        // Throwing
-                        launchDrift();
-                    } else if (speed > 0.5) {
-                        // Fast movement while open = Spin up
-                        STATE.rotVel.x += (STATE.handPos1.y - STATE.prevHandPos1.y) * 0.2;
-                        STATE.rotVel.y += (STATE.handPos1.x - STATE.prevHandPos1.x) * 0.2;
-                        updateMode('ROTATE');
-                    } else {
-                        // Just hovering
-                        if (STATE.vel.length() > 0.1) updateMode('DRIFT'); // Keep drifting
-                        else updateMode('ROTATE');
-                    }
+                if (h1.isPinch) {
+                    if (STATE.mode !== 'RESIZE') { STATE.resizeBaseY = y1; STATE.resizeBaseS = STATE.scale; }
+                    const deltaY = y1 - STATE.resizeBaseY;
+                    STATE.scale = Math.max(0.3, Math.min(3.0, STATE.resizeBaseS + deltaY * 0.3));
+                    updateMode('RESIZE');
                     return;
                 }
-            }
 
-            // No hands? Keep drifting
-            if (STATE.mode !== 'DRIFT' && STATE.mode !== 'IDLE') {
-                if (STATE.mode === 'ROTATE') {/* keep spinning */}
-                else launchDrift();
+                if (h1.isOpen) {
+                    updateMode('ROTATE');
+                    return;
+                }
+            } else {
+                updateMode('IDLE');
             }
         }
 
-        function analyzeHand(lm) {
+        function analyze(lm) {
             const isIndexUp = lm[8].y < lm[6].y;
             const isMiddleUp = lm[12].y < lm[10].y;
             const isRingUp = lm[16].y < lm[14].y;
             const isPinkyUp = lm[20].y < lm[18].y;
-            const isThumbOpen = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y) > 0.25;
+            const isThumbOpen = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y) > 0.2;
             
+            // Simplified Pinch for stability
+            const pinchDist = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
+            const isPinch = pinchDist < 0.08 && isMiddleUp; 
+
             let fingers = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
-            if(isThumbOpen) fingers++;
+            // Simplified Grab (0 or 1 finger)
+            const isGrab = (fingers <= 1);
 
-            const isGrab = (fingers <= 1 && !isThumbOpen);
-            const isVictory = (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp);
-            const isIndexOnly = (isIndexUp && !isMiddleUp);
-
-            return { fingers, thumbOpen: isThumbOpen, isGrab, isVictory, isIndexOnly };
-        }
-
-        function launchDrift() {
-            if(STATE.mode === 'DRIFT') return;
-            updateMode('DRIFT');
-            STATE.vel.copy(STATE.momentum).multiplyScalar(2.5);
-            if(STATE.vel.length() > 0.1) AudioSys.playTone(300, 'triangle', 0.2);
+            return { isGrab, isPinch, isOpen: (fingers >= 4) };
         }
 
         function updateMode(m) {
             if(STATE.mode === m) return;
             STATE.mode = m;
             uiMode.innerText = m;
-            if(m==='GRAB') uiMode.style.color = 'white';
-            else if(m==='DUAL') uiMode.style.color = '#ff00ff';
-            else if(m==='ROTATE') uiMode.style.color = 'gold';
-            else uiMode.style.color = '#00ffff';
+            
+            // MAP internal mode to Russian UI text if needed, or keep logic simple
+            const ru = {
+                'GRAB': 'КУЛАК (ТАЩИТЬ)',
+                'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)',
+                'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)',
+                'DUAL': 'ДВЕ РУКИ',
+                'IDLE': 'ОЖИДАНИЕ',
+                'РИСУЕМ (КУЛАК)': 'РИСУЕМ (КУЛАК)',
+                'РИСУЕМ (МЫШЬ)': 'РИСУЕМ (МЫШЬ)',
+                'КУРСОР': 'КУРСОР'
+            };
+            uiMode.innerText = ru[m] || m;
+
+            const cols = { 'GRAB':'#fff', 'DUAL':'#f0f', 'ROTATE':'gold', 'RESIZE':'#0f0', 'РИСУЕМ (КУЛАК)':'#ff00ff' };
+            uiMode.style.color = cols[m] || '#0ff';
+            if(m==='GRAB') AudioSys.playTone(200, 'sine');
         }
 
         const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}` });
@@ -428,9 +670,7 @@
             hands.onResults(onResults);
             const cam = new Camera(videoElement, { onFrame: async () => await hands.send({image: videoElement}), width: 640, height: 480 });
             cam.start();
-        } catch(e) {
-            document.getElementById('error-log').innerHTML = "Cam Error: " + e.message;
-        }
+        } catch(e) { console.error(e); }
 
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         animate();
