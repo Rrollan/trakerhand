@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBER-HAND V70: ULTIMATE</title>
+    <title>CYBER-HAND V71: FIXED MESH</title>
     <style>
-        /* Блокируем скролл и зум для жестов (ИЗ V50) */
+        /* Блокируем скролл и зум для жестов */
         body { 
             margin: 0; overflow: hidden; background-color: #050505; 
             font-family: 'Segoe UI', monospace; color: white; 
@@ -81,7 +81,7 @@
         #ui-hint { position: absolute; top: 20px; right: 20px; color: rgba(255,255,255,0.3); font-size: 12px; display: none; pointer-events: none; z-index: 5; }
     </style>
 
-    <!-- ИМПОРТЫ БИБЛИОТЕК (МОДУЛИ) -->
+    <!-- ИМПОРТЫ БИБЛИОТЕК -->
     <script type="importmap">
         {
             "imports": {
@@ -113,7 +113,7 @@
 
     <div id="ui-panel">
         <div class="header">
-            <h2>CYBER-HAND V70</h2>
+            <h2>CYBER-HAND V71</h2>
             <button onclick="document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block';" style="background:none; border:none; color:#0ff; cursor:pointer; font-size:16px;">✕</button>
         </div>
 
@@ -123,7 +123,6 @@
         </div>
 
         <div id="view-controls">
-            <!-- ВЕРНУЛ ВСЕ КНОПКИ ЗАГРУЗКИ -->
             <label class="file-upload">
                 📥 ЗАГРУЗИТЬ 3D МОДЕЛЬ (.OBJ)
                 <input type="file" id="obj-input" accept=".obj">
@@ -218,8 +217,8 @@
 
         // --- CONFIG ---
         const CONFIG = {
-            count: 15000, // Оптимум для телефонов с Bloom
-            size: 0.06,
+            count: 20000, // Увеличил количество частиц для лучшей детализации моделей
+            size: 0.05,
             shape: 'sphere',
             hue: 0.5,
             spinFriction: 0.95,
@@ -249,7 +248,7 @@
         
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for perf
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -332,7 +331,7 @@
         );
         scene.add(cursor); cursor.visible = false;
 
-        // --- OBJ LOADER ---
+        // --- FIXED OBJ LOADER (RANDOM SAMPLING) ---
         const objLoader = new OBJLoader();
         document.getElementById('obj-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -358,14 +357,22 @@
                     }
                 });
                 if(modelVertices.length === 0) { alert("Bad Model"); return; }
+                
+                // --- ИСПРАВЛЕНИЕ: RANDOM SAMPLING ---
+                // Вместо последовательного перебора, берем случайные точки
+                const totalVertices = modelVertices.length / 3;
+                
                 for(let i=0; i<CONFIG.count; i++) {
-                    const idx = i % (modelVertices.length / 3);
-                    shapes.custom[i*3] = modelVertices[idx*3];
-                    shapes.custom[i*3+1] = modelVertices[idx*3+1];
-                    shapes.custom[i*3+2] = modelVertices[idx*3+2];
+                    // Генерируем случайный индекс вершины
+                    const randIdx = Math.floor(Math.random() * totalVertices);
+                    
+                    shapes.custom[i*3] = modelVertices[randIdx*3];
+                    shapes.custom[i*3+1] = modelVertices[randIdx*3+1];
+                    shapes.custom[i*3+2] = modelVertices[randIdx*3+2];
                 }
+
                 CONFIG.shape = 'custom';
-                CONFIG.useTexture = false; // Reset texture when loading OBJ
+                CONFIG.useTexture = false;
                 CONFIG.appMode = 'VIEW';
                 document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
                 window.AudioSys.playTone(400, 'square');
@@ -373,7 +380,7 @@
             reader.readAsText(file);
         });
 
-        // --- TEXTURE LOADER (RESTORED) ---
+        // --- TEXTURE LOADER ---
         const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
         document.getElementById('tex-input').addEventListener('change', e => {
             const f = e.target.files[0];
@@ -397,7 +404,6 @@
                             STATE.originalColors[i*3+2] = data[idx+2]/255;
                         }
                         CONFIG.useTexture = true;
-                        // For textured bloom, we might want to reduce bloom slightly
                         bloomPass.strength = 0.8; 
                         document.getElementById('bloom-slider').value = 0.8;
                         document.getElementById('val-bloom').innerText = 0.8;
@@ -413,7 +419,6 @@
         const raycaster = new THREE.Raycaster();
         const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
-        // Buttons
         document.getElementById('btn-view').onclick = () => setAppMode('VIEW');
         document.getElementById('btn-draw').onclick = () => setAppMode('DRAW');
         document.getElementById('clear-btn').onclick = () => {
@@ -422,7 +427,6 @@
             window.AudioSys.playTone(300, 'triangle');
         };
 
-        // Sliders & Inputs
         document.getElementById('bloom-slider').oninput = (e) => { 
             bloomPass.strength = parseFloat(e.target.value); 
             document.getElementById('val-bloom').innerText = e.target.value; 
@@ -446,7 +450,6 @@
             if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
         });
 
-        // Shapes
         document.querySelectorAll('.shape-btn').forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
@@ -472,7 +475,7 @@
             }
         }
 
-        // --- INPUT HANDLING (TOUCH + MOUSE RESTORED) ---
+        // --- INPUT HANDLING ---
         function updatePointer(x, y) {
             STATE.mouse.x = (x / window.innerWidth) * 2 - 1;
             STATE.mouse.y = -(y / window.innerHeight) * 2 + 1;
@@ -484,7 +487,6 @@
         window.addEventListener('mousedown', () => { if(CONFIG.appMode==='DRAW') STATE.isMouseDrawing=true; });
         window.addEventListener('mouseup', () => STATE.isMouseDrawing=false);
 
-        // TOUCH EVENTS
         window.addEventListener('touchstart', e => {
             if(e.target.closest('#ui-panel') || e.target.closest('#start-screen')) return;
             if(CONFIG.appMode === 'DRAW') {
@@ -516,7 +518,6 @@
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
 
-            // DRAWING
             if(CONFIG.appMode === 'DRAW') {
                 cursor.visible = true;
                 let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
@@ -551,7 +552,6 @@
                 cursor.visible = false;
             }
 
-            // PARTICLES MOVEMENT
             for(let i=0; i<CONFIG.count; i++) {
                 const ix = i*3;
                 let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
@@ -568,13 +568,11 @@
                 posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
                 posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
 
-                // Color handling (Texture vs Gradient)
                 if(CONFIG.useTexture) {
                     colAttr.array[ix] = STATE.originalColors[ix];
                     colAttr.array[ix+1] = STATE.originalColors[ix+1];
                     colAttr.array[ix+2] = STATE.originalColors[ix+2];
                 } else {
-                    // Default cyberpunk gradient
                     if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) {
                         colAttr.array[ix]=1; colAttr.array[ix+1]=1; colAttr.array[ix+2]=1;
                     } else {
@@ -587,7 +585,6 @@
             posAttr.needsUpdate = true;
             colAttr.needsUpdate = true;
 
-            // PHYSICS CONTAINER
             if(CONFIG.appMode === 'VIEW') {
                 const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
 
@@ -630,7 +627,6 @@
             composer.render();
         }
 
-
         // --- MEDIAPIPE LOGIC ---
         const uiMode = document.getElementById('mode-disp');
         const loader = document.getElementById('loader');
@@ -668,7 +664,6 @@
                 return;
             }
 
-            // View Mode
             if(count===2) {
                  STATE.hand1.set(x1, y1, 0);
                  const dist = STATE.hand1.distanceTo(STATE.hand2);
@@ -705,18 +700,8 @@
             if(STATE.mode === m) return;
             STATE.mode = m;
             uiMode.innerText = m;
-            
-            const ru = {
-                'GRAB': 'КУЛАК (ТАЩИТЬ)',
-                'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)',
-                'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)',
-                'DUAL HANDS': 'ДВЕ РУКИ',
-                'IDLE': 'ОЖИДАНИЕ',
-                'DRAWING (FIST)': 'РИСУЕМ (КУЛАК)',
-                'CURSOR': 'КУРСОР'
-            };
+            const ru = { 'GRAB': 'КУЛАК (ТАЩИТЬ)', 'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)', 'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)', 'DUAL HANDS': 'ДВЕ РУКИ', 'IDLE': 'ОЖИДАНИЕ', 'DRAWING (FIST)': 'РИСУЕМ (КУЛАК)', 'CURSOR': 'КУРСОР' };
             uiMode.innerText = ru[m] || m;
-
             if(m==='GRAB') window.AudioSys.playTone(150, 'sawtooth');
             if(m==='RESIZE') window.AudioSys.playTone(400, 'sine');
         }
