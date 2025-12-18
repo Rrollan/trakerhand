@@ -3,218 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rollanhandtracker</title>
+    <title>CYBER-HAND V60: NEON GOD</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', monospace; color: white; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Segoe UI', monospace; color: white; user-select: none; }
         
-        /* LAYERS */
         #bg-layer { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
-            background: radial-gradient(circle at center, #111 0%, #000 100%);
-            background-size: cover; background-position: center;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
         }
 
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: crosshair; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
         #video-feed { 
             position: absolute; bottom: 20px; left: 20px; width: 160px; z-index: 2; 
-            border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3); 
-            transform: scaleX(-1); opacity: 0.5; transition: opacity 0.5s; 
+            border-radius: 12px; border: 1px solid rgba(0, 255, 255, 0.3); 
+            transform: scaleX(-1); opacity: 0.6; 
         }
         
         #ui-panel { 
             position: absolute; top: 20px; right: 20px; width: 300px; 
-            padding: 20px; background: rgba(15, 15, 15, 0.95); 
-            backdrop-filter: blur(15px); border-radius: 16px; 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
+            padding: 20px; background: rgba(10, 10, 15, 0.90); 
+            backdrop-filter: blur(20px); border-radius: 16px; 
+            border: 1px solid rgba(0, 255, 255, 0.2); 
             z-index: 10; transition: transform 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
             max-height: 90vh; overflow-y: auto;
         }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
-        h2 { margin: 0; font-size: 14px; color: #00ffff; letter-spacing: 1px; }
-        #hide-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; }
-        #hide-btn:hover { color: #fff; }
-
-        .control-row { margin-bottom: 12px; }
-        .label { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 4px; text-transform: uppercase; }
+        h2 { margin: 0; font-size: 14px; color: #00ffff; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
         
-        input[type=range] { width: 100%; -webkit-appearance: none; background: #333; height: 4px; border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #00ffff; border-radius: 50%; cursor: pointer; border: 2px solid #000; }
+        .control-row { margin-bottom: 15px; }
+        .label { display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-bottom: 5px; text-transform: uppercase; }
         
-        /* MODE SWITCHER */
-        .mode-switch { display: flex; gap: 5px; margin-bottom: 15px; background: #222; padding: 4px; border-radius: 8px; }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: #333; height: 3px; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #00ffff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px #00ffff; }
+        
+        .mode-switch { display: flex; gap: 5px; margin-bottom: 15px; background: #000; padding: 4px; border-radius: 8px; border: 1px solid #333; }
         .mode-btn { 
-            flex: 1; padding: 8px; border: none; background: transparent; color: #888; 
-            font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; 
+            flex: 1; padding: 8px; border: none; background: transparent; color: #666; 
+            font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; 
         }
-        .mode-btn.active { background: #00ffff; color: #000; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+        .mode-btn.active { background: #00ffff; color: #000; box-shadow: 0 0 15px rgba(0,255,255,0.4); }
 
         .file-upload {
-            display: block; width: 100%; padding: 10px 0; text-align: center;
-            background: rgba(255,255,255,0.05); border: 1px dashed #555;
-            color: #888; font-size: 10px; cursor: pointer; border-radius: 6px;
-            transition: 0.2s; margin-bottom: 5px; box-sizing: border-box;
+            display: block; width: 100%; padding: 12px 0; text-align: center;
+            background: rgba(0, 255, 255, 0.05); border: 1px dashed #00ffff;
+            color: #00ffff; font-size: 10px; cursor: pointer; border-radius: 6px;
+            transition: 0.2s; margin-bottom: 8px; box-sizing: border-box;
+            text-shadow: 0 0 5px rgba(0,255,255,0.3);
         }
-        .file-upload:hover { border-color: #00ffff; color: #00ffff; }
+        .file-upload:hover { background: rgba(0, 255, 255, 0.15); box-shadow: 0 0 15px rgba(0,255,255,0.2); }
         input[type="file"] { display: none; }
-        input[type="color"] { border: none; width: 100%; height: 25px; background: none; cursor: pointer; padding: 0;}
 
         .shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .shape-btn { background: #222; border: 1px solid #444; color: #ccc; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: 0.2s; text-transform: uppercase;}
-        .shape-btn:hover { background: #333; color: #fff; }
-        .shape-btn.active { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.1); }
+        .shape-btn { background: #111; border: 1px solid #333; color: #ccc; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: 0.2s; text-transform: uppercase;}
+        .shape-btn:hover { border-color: #fff; }
+        .shape-btn.active { border-color: #00ffff; color: #00ffff; box-shadow: inset 0 0 10px rgba(0,255,255,0.2); }
 
-        #clear-btn { width: 100%; padding: 10px; background: #440000; color: #ff5555; margin-top: 5px; border: 1px solid #660000; border-radius: 6px; cursor: pointer;}
-        #clear-btn:hover { background: #660000; color: #fff; }
-
-        .status { font-size: 11px; color: #888; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; line-height: 1.6; }
-        .key { color: #fff; font-weight: bold; }
-        #mode-disp { text-align: center; color: #00ffff; font-weight: bold; font-size: 13px; margin-top: 5px; letter-spacing: 1px; padding: 5px; background: rgba(0,255,255,0.1); border-radius: 4px;}
-
-        #loader { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:99; display:flex; justify-content:center; align-items:center; color:#00ffff; font-size:14px; transition: opacity 0.5s; }
-        #ui-hint { position: absolute; top: 20px; right: 20px; color: rgba(255,255,255,0.3); font-size: 12px; display: none; pointer-events: none; z-index: 5; }
+        #clear-btn { width: 100%; padding: 10px; background: #300; color: #f55; margin-top: 5px; border: 1px solid #600; border-radius: 6px; cursor: pointer;}
         
-        #start-screen { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 999; display:flex; justify-content:center; align-items:center; cursor:pointer; flex-direction: column;}
-        #start-btn { font-size: 20px; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; border-radius: 50px; background: transparent; transition: 0.3s; }
-        #start-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.6); }
+        #mode-disp { text-align: center; color: #00ffff; font-weight: bold; font-size: 12px; margin-top: 15px; letter-spacing: 1px; padding: 8px; background: rgba(0,255,255,0.05); border-radius: 4px; border: 1px solid rgba(0,255,255,0.1);}
+
+        #loader { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:99; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#00ffff; font-size:14px; transition: opacity 0.5s; }
+        
+        #start-screen { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 999; display:flex; justify-content:center; align-items:center; cursor:pointer; flex-direction: column;}
+        #start-btn { font-size: 20px; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; border-radius: 50px; background: transparent; transition: 0.3s; box-shadow: 0 0 20px rgba(0,255,255,0.2); text-transform: uppercase; letter-spacing: 2px;}
+        #start-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 50px rgba(0,255,255,0.8); }
     </style>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- ИСПОЛЬЗУЕМ МОДУЛИ ДЛЯ БИБЛИОТЕК (СОВРЕМЕННЫЙ ПОДХОД) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/examples/jsm/loaders/OBJLoader.js": "https://unpkg.com/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
+                "three/examples/jsm/postprocessing/EffectComposer.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js",
+                "three/examples/jsm/postprocessing/RenderPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/RenderPass.js",
+                "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js",
+                "three/examples/jsm/postprocessing/ShaderPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/ShaderPass.js",
+                "three/examples/jsm/shaders/CopyShader.js": "https://unpkg.com/three@0.128.0/examples/jsm/shaders/CopyShader.js",
+                "three/examples/jsm/shaders/LuminosityHighPassShader.js": "https://unpkg.com/three@0.128.0/examples/jsm/shaders/LuminosityHighPassShader.js"
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js"></script>
 </head>
 <body>
 
     <div id="bg-layer"></div>
-    <div id="loader">ИНИЦИАЛИЗАЦИЯ...</div>
+    <div id="loader"><div>ЗАГРУЗКА ЯДРА...</div></div>
 
-    <div id="start-screen" onclick="initAudio()">
-        <button id="start-btn">ЗАПУСК СИСТЕМЫ</button>
-        <div style="margin-top:15px; color:#666; font-size:12px;">Audio | Physics | WebGL</div>
+    <div id="start-screen">
+        <button id="start-btn">INITIATE SYSTEM</button>
+        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM ENGINE | OBJ LOADER | HAND TRACKING</div>
     </div>
-
-    <div id="ui-hint">Настройки</div>
 
     <div id="ui-panel">
         <div class="header">
-            <h2>V50 GRANDMASTER</h2>
-            <button id="hide-btn" onclick="toggleUI()">✕</button>
+            <h2>CYBER-HAND V60</h2>
+            <button onclick="document.getElementById('ui-panel').style.display='none'" style="background:none; border:none; color:#0ff; cursor:pointer;">[-]</button>
         </div>
 
         <div class="mode-switch">
-            <button class="mode-btn active" id="btn-view" onclick="setAppMode('VIEW')">👁 ПРОСМОТР</button>
-            <button class="mode-btn" id="btn-draw" onclick="setAppMode('DRAW')">🖌 РИСОВАНИЕ</button>
+            <button class="mode-btn active" id="btn-view">👁 ПРОСМОТР</button>
+            <button class="mode-btn" id="btn-draw">🖌 РИСОВАНИЕ</button>
         </div>
 
-        <!-- РИСОВАНИЕ -->
-        <div id="draw-controls" style="display:none;">
-            <div style="text-align:center; font-size:11px; color:#fff; margin-bottom:10px; background: rgba(0,255,255,0.1); padding: 10px; border-radius: 6px;">
-                1. <b>ЛКМ</b> или <b>КУЛАК</b> — Рисовать<br>
-                2. Жест <b>ОК</b> — Сохранить
-            </div>
-            <button id="clear-btn" onclick="clearCanvas()">ОЧИСТИТЬ ХОЛСТ</button>
-        </div>
-
-        <!-- ПРОСМОТР -->
         <div id="view-controls">
+            <!-- НОВАЯ ФУНКЦИЯ: ЗАГРУЗКА 3D МОДЕЛИ -->
+            <label class="file-upload">
+                📥 ЗАГРУЗИТЬ 3D МОДЕЛЬ (.OBJ)
+                <input type="file" id="obj-input" accept=".obj">
+            </label>
+
             <div class="control-row">
-                <label class="file-upload">
-                    ЗАГРУЗИТЬ ФОН
-                    <input type="file" id="bg-input" accept="image/*">
-                </label>
-                <label class="file-upload" style="border-color: #00ffff; color: #00ffff;">
-                    ТЕКСТУРА ОБЪЕКТА (ФОТО)
-                    <input type="file" id="tex-input" accept="image/*">
-                </label>
+                <div class="label"><span>Свечение (Bloom)</span><span id="val-bloom">1.5</span></div>
+                <input type="range" id="bloom-slider" min="0" max="3" step="0.1" value="1.5">
             </div>
 
             <div class="control-row">
-                <div class="label"><span>Цвет</span></div>
-                <input type="color" id="color-input" value="#00ffff">
+                <div class="label"><span>Размер частиц</span><span id="val-size">0.06</span></div>
+                <input type="range" id="size-slider" min="0.01" max="0.2" step="0.01" value="0.06">
             </div>
 
             <div class="control-row">
-                <div class="label"><span>Размер</span><span id="val-size">0.08</span></div>
-                <input type="range" min="0.02" max="0.3" step="0.01" value="0.08" oninput="updateParam('size', this.value)">
-            </div>
-
-            <div class="control-row">
-                <div class="label"><span>Инерция (Трение)</span><span id="val-speed">0.96</span></div>
-                <input type="range" min="0.80" max="0.99" step="0.01" value="0.96" oninput="updateParam('friction', this.value)">
+                <div class="label"><span>Инерция</span><span id="val-fric">0.95</span></div>
+                <input type="range" id="fric-slider" min="0.80" max="0.99" step="0.01" value="0.95">
             </div>
 
             <div class="shape-grid">
-                <button class="shape-btn active" onclick="setShape('sphere', this)">Сфера</button>
-                <button class="shape-btn" onclick="setShape('galaxy', this)">Галактика</button>
-                <button class="shape-btn" onclick="setShape('heart', this)">Сердце</button>
-                <button class="shape-btn" onclick="setShape('cube', this)">Куб</button>
+                <button class="shape-btn active" data-shape="sphere">Сфера</button>
+                <button class="shape-btn" data-shape="galaxy">Галактика</button>
+                <button class="shape-btn" data-shape="dna">ДНК</button>
+                <button class="shape-btn" data-shape="cube">Куб</button>
             </div>
         </div>
 
-        <div class="status">
-            <div id="status-text">
-                <div><span class="key">✊ Кулак:</span> ПЕРЕМЕЩЕНИЕ</div>
-                <div><span class="key">👋 Ладонь:</span> ВРАЩЕНИЕ</div>
-                <div><span class="key">👌 Жест ОК:</span> РАЗМЕР (Вверх/Вниз)</div>
-                <div><span class="key">👐 Две руки:</span> РАСТЯГИВАТЬ</div>
+        <div id="draw-controls" style="display:none;">
+            <div style="text-align:center; font-size:11px; color:#fff; margin-bottom:10px; background: rgba(0,255,255,0.1); padding: 10px; border-radius: 6px;">
+                Жест <b>"ОК"</b> сохраняет рисунок
             </div>
-            <div id="mode-disp">ОЖИДАНИЕ</div>
+            <button id="clear-btn">ОЧИСТИТЬ</button>
         </div>
+
+        <div id="mode-disp">SYSTEM READY</div>
     </div>
 
     <video id="video-feed" playsinline></video>
-    <div id="canvas-container" onclick="showUI()"></div>
+    <div id="canvas-container"></div>
 
-    <script>
-        // --- SAFE INIT ---
-        window.onerror = function(msg, url, line) { 
-            console.error(`Err: ${msg} line ${line}`); 
-            if(document.getElementById('loader')) document.getElementById('loader').style.display='none'; 
-        };
-
-        const CONFIG = {
-            count: 15000, 
-            size: 0.08,   
-            shape: 'sphere',
-            hue: 0.5,
-            spinFriction: 0.96, 
-            bounds: { x: 16, y: 10 },
-            appMode: 'VIEW',
-            useTexture: false
-        };
-
-        const STATE = {
-            // Vectors - Initialized Immediately
-            pos: new THREE.Vector3(0,0,0),    
-            vel: new THREE.Vector3(0,0,0),    
-            rotVel: {x:0, y:0},
-            
-            hand1: new THREE.Vector3(0,0,0), 
-            hand2: new THREE.Vector3(0,0,0),
-            prevHand: new THREE.Vector3(0,0,0), 
-            smoothHand: new THREE.Vector3(0,0,0),
-            
-            mouse: new THREE.Vector2(),
-            mouseWorld: new THREE.Vector3(),
-            lastDrawPos: new THREE.Vector3(0,0,0),
-
-            drawIndex: 0,
-            isMouseDrawing: false,
-            isHandDrawing: false,
-            
-            activeHandId: 0,
-            scale: 1.0,
-            entropy: 0.0,
-            mode: 'IDLE',
-            
-            scatterOffset: new Float32Array(CONFIG.count * 3),
-            originalColors: new Float32Array(CONFIG.count * 3),
-            
-            resizeBaseY: 0,
-            resizeBaseS: 1.0
-        };
+    <script type="module">
+        import * as THREE from 'three';
+        import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+        import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
         // --- AUDIO ---
         const AudioSys = {
@@ -224,7 +169,7 @@
                 const AC = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AC();
                 this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 0.3;
+                this.masterGain.gain.value = 0.2;
                 this.masterGain.connect(this.ctx.destination);
                 this.active = true;
                 document.getElementById('start-screen').style.display = 'none';
@@ -241,191 +186,250 @@
             }
         };
 
-        function initAudio() { AudioSys.init(); }
+        document.getElementById('start-btn').addEventListener('click', () => AudioSys.init());
 
-        // --- UI FUNCTIONS ---
-        function toggleUI() { document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block'; }
-        function showUI() { document.getElementById('ui-panel').style.transform = 'translateX(0)'; document.getElementById('ui-hint').style.display='none'; }
+        // --- CONFIG ---
+        const CONFIG = {
+            count: 20000, // Больше частиц для крутости
+            size: 0.06,
+            shape: 'sphere',
+            spinFriction: 0.95,
+            appMode: 'VIEW',
+            bloomStr: 1.5
+        };
 
-        function setAppMode(mode) {
-            CONFIG.appMode = mode;
-            document.getElementById('btn-view').className = mode === 'VIEW' ? 'mode-btn active' : 'mode-btn';
-            document.getElementById('btn-draw').className = mode === 'DRAW' ? 'mode-btn active' : 'mode-btn';
-            
-            document.getElementById('view-controls').style.display = mode === 'VIEW' ? 'block' : 'none';
-            document.getElementById('draw-controls').style.display = mode === 'DRAW' ? 'block' : 'none';
-            
-            if(mode === 'DRAW') {
-                CONFIG.shape = 'custom';
-                STATE.drawIndex = 0;
-                // Hide existing particles
-                for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
-                STATE.pos.set(0,0,0); STATE.vel.set(0,0,0); STATE.rotVel = {x:0, y:0};
-                STATE.scale = 1.0;
-                document.getElementById('status-text').innerHTML = "";
-            } else {
-                document.getElementById('status-text').innerHTML = `
-                    <div><span class="key">✊ Кулак:</span> ТАЩИТЬ</div>
-                    <div><span class="key">👋 Ладонь:</span> ВРАЩАТЬ</div>
-                    <div><span class="key">👌 Жест ОК:</span> РАЗМЕР</div>
-                `;
-            }
-        }
+        const STATE = {
+            pos: new THREE.Vector3(), vel: new THREE.Vector3(), rotVel: {x:0, y:0},
+            hand1: new THREE.Vector3(), hand2: new THREE.Vector3(),
+            prevHand: new THREE.Vector3(), smoothHand: new THREE.Vector3(),
+            mouse: new THREE.Vector2(), mouseWorld: new THREE.Vector3(), lastDrawPos: new THREE.Vector3(),
+            drawIndex: 0, isMouseDrawing: false, isHandDrawing: false, activeHandId: 0,
+            scale: 1.0, entropy: 0.0, mode: 'IDLE',
+            scatterOffset: new Float32Array(CONFIG.count * 3),
+            resizeBaseY: 0, resizeBaseS: 1.0
+        };
 
-        function clearCanvas() {
-            if(CONFIG.appMode !== 'DRAW') return;
-            STATE.drawIndex = 0;
-            for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
-            AudioSys.playTone(300, 'triangle');
-        }
-
-        // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ПАРАМЕТРОВ ---
-        function updateParam(k, v) {
-            if(k==='size') { 
-                CONFIG.size=parseFloat(v); 
-                material.size=CONFIG.size; 
-                document.getElementById('val-size').innerText=v; 
-            }
-            if(k==='friction') { 
-                CONFIG.spinFriction = parseFloat(v); 
-                document.getElementById('val-speed').innerText = v; // Теперь текст обновляется
-            }
-        }
-
-        document.getElementById('color-input').addEventListener('input', e => {
-            const c = new THREE.Color(e.target.value);
-            const hsl = {}; c.getHSL(hsl);
-            CONFIG.hue = hsl.h;
-            CONFIG.useTexture = false; material.blending = THREE.AdditiveBlending; 
-        });
-        document.getElementById('bg-input').addEventListener('change', e => {
-            const f = e.target.files[0];
-            if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
-        });
-
-        // --- THREE.JS SETUP ---
+        // --- THREE JS INIT ---
         const scene = new THREE.Scene();
+        // Туман для глубины
+        scene.fog = new THREE.FogExp2(0x000000, 0.02);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         camera.position.z = 8;
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); // Antialias off for bloom perf
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Sharpness
+        renderer.toneMapping = THREE.ReinhardToneMapping;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        const raycaster = new THREE.Raycaster();
-        const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        // --- POST PROCESSING (BLOOM) ---
+        const renderScene = new RenderPass(scene, camera);
+        
+        // Resolution, Strength, Radius, Threshold
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.strength = CONFIG.bloomStr;
+        bloomPass.radius = 0.5;
+        bloomPass.threshold = 0;
 
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- PARTICLES ---
         function getTexture() {
-            const c = document.createElement('canvas'); c.width=64; c.height=64;
+            const c = document.createElement('canvas'); c.width=32; c.height=32;
             const ctx = c.getContext('2d');
-            const g = ctx.createRadialGradient(32,32,0,32,32,32);
+            // Более жесткий градиент для неонового эффекта
+            const g = ctx.createRadialGradient(16,16,0,16,16,16);
             g.addColorStop(0,'rgba(255,255,255,1)');
-            g.addColorStop(0.2,'rgba(200,200,255,0.8)');
-            g.addColorStop(0.5,'rgba(255,255,255,0.2)');
+            g.addColorStop(0.4,'rgba(255,255,255,0.3)');
             g.addColorStop(1,'rgba(0,0,0,0)');
-            ctx.fillStyle=g; ctx.fillRect(0,0,64,64);
+            ctx.fillStyle=g; ctx.fillRect(0,0,32,32);
             return new THREE.CanvasTexture(c);
         }
 
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(CONFIG.count * 3);
         const colors = new Float32Array(CONFIG.count * 3);
-        const shapes = { sphere: [], galaxy: [], heart: [], cube: [], custom: [] };
-        const c3 = new THREE.Color();
-
+        const shapes = { sphere: [], galaxy: [], dna: [], cube: [], custom: [] };
+        
+        // Generate Shapes
+        const colorObj = new THREE.Color();
         for(let i=0; i<CONFIG.count; i++) {
+            // SPHERE
             const phi = Math.acos(-1 + (2*i)/CONFIG.count);
             const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
-            shapes.sphere.push(2.5*Math.cos(theta)*Math.sin(phi), 2.5*Math.sin(theta)*Math.sin(phi), 2.5*Math.cos(phi));
+            shapes.sphere.push(3*Math.cos(theta)*Math.sin(phi), 3*Math.sin(theta)*Math.sin(phi), 3*Math.cos(phi));
             
-            const ang = i*0.1; const r = (i/CONFIG.count)*6;
-            shapes.galaxy.push(r*Math.cos(ang), (Math.random()-0.5)*0.5, r*Math.sin(ang));
+            // GALAXY
+            const ang = i*0.05; const r = (i/CONFIG.count)*8;
+            shapes.galaxy.push(r*Math.cos(ang), (Math.random()-0.5)*1 + Math.sin(r)*0.5, r*Math.sin(ang));
+
+            // DNA
+            const t = i * 0.1;
+            const radius = 2;
+            const x = Math.cos(t) * radius;
+            const y = (i / CONFIG.count) * 12 - 6;
+            const z = Math.sin(t) * radius;
+            // Двойная спираль
+            if (i % 2 === 0) shapes.dna.push(x, y, z);
+            else shapes.dna.push(-x, y, -z);
+
+            // CUBE
+            shapes.cube.push((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
             
-            const t = (i/CONFIG.count)*Math.PI*2;
-            const hx = 16*Math.pow(Math.sin(t),3);
-            const hy = 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
-            shapes.heart.push(hx*0.15, hy*0.15, (Math.random()-0.5));
-            shapes.cube.push((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
-            shapes.custom.push(99999,99999,99999);
+            // CUSTOM Placeholder
+            shapes.custom.push(9999,9999,9999);
+
+            // COLORS (Cyberpunk Palette: Cyan & Magenta)
+            if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); // Cyan
+            else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); // Magenta
             
-            STATE.scatterOffset[i*3] = (Math.random()-0.5)*20;
-            STATE.scatterOffset[i*3+1] = (Math.random()-0.5)*20;
-            STATE.scatterOffset[i*3+2] = (Math.random()-0.5)*20;
+            colors[i*3] = colorObj.r; colors[i*3+1] = colorObj.g; colors[i*3+2] = colorObj.b;
+
+            STATE.scatterOffset[i*3] = (Math.random()-0.5)*30;
+            STATE.scatterOffset[i*3+1] = (Math.random()-0.5)*30;
+            STATE.scatterOffset[i*3+2] = (Math.random()-0.5)*30;
         }
 
         positions.set(shapes.sphere);
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        const material = new THREE.PointsMaterial({ size: CONFIG.size, map: getTexture(), vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+
+        const material = new THREE.PointsMaterial({ 
+            size: CONFIG.size, 
+            map: getTexture(), 
+            vertexColors: true, 
+            blending: THREE.AdditiveBlending, 
+            depthWrite: false, 
+            transparent: true 
+        });
+
         const particles = new THREE.Points(geometry, material);
         scene.add(particles);
 
-        // TEXTURE LOADER LOGIC
-        const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
-        document.getElementById('tex-input').addEventListener('change', e => {
-            const f = e.target.files[0];
-            if(f) {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    const img = new Image();
-                    img.onload = () => {
-                        mapCanvas.width = img.width; mapCanvas.height = img.height;
-                        mapCtx.drawImage(img,0,0);
-                        const data = mapCtx.getImageData(0,0,img.width,img.height).data;
-                        for(let i=0; i<CONFIG.count; i++) {
-                            const phi = Math.acos(-1 + (2*i)/CONFIG.count);
-                            const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
-                            let u = (theta % (2*Math.PI))/(2*Math.PI);
-                            let v = phi / Math.PI;
-                            const px = Math.floor(u*img.width); const py = Math.floor(v*img.height);
-                            const idx = (py*img.width+px)*4;
-                            STATE.originalColors[i*3] = data[idx]/255;
-                            STATE.originalColors[i*3+1] = data[idx+1]/255;
-                            STATE.originalColors[i*3+2] = data[idx+2]/255;
-                        }
-                        CONFIG.useTexture = true;
-                        material.blending = THREE.NormalBlending;
-                        CONFIG.size = 0.05; material.size = 0.05;
-                    };
-                    img.src = ev.target.result;
-                };
-                reader.readAsDataURL(f);
-            }
-        });
-
-        // CURSOR
-        const cursorGeo = new THREE.RingGeometry(0.1, 0.15, 32);
-        const cursorMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
-        const cursor = new THREE.Mesh(cursorGeo, cursorMat);
+        // Cursor
+        const cursor = new THREE.Mesh(
+            new THREE.RingGeometry(0.15, 0.2, 32),
+            new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
+        );
         scene.add(cursor); cursor.visible = false;
 
-        window.setShape = (n, btn) => {
-            CONFIG.shape = n;
-            setAppMode('VIEW');
-            document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+        // --- OBJ LOADER LOGIC ---
+        const objLoader = new OBJLoader();
+        document.getElementById('obj-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const contents = ev.target.result;
+                const object = objLoader.parse(contents); // Синхронный парсинг
+
+                // Извлекаем вершины из модели
+                let modelVertices = [];
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        const pos = child.geometry.attributes.position;
+                        // Масштабирование если нужно
+                        child.geometry.computeBoundingSphere();
+                        const center = child.geometry.boundingSphere.center;
+                        const radius = child.geometry.boundingSphere.radius;
+                        
+                        const scale = 6.0 / radius; // Нормализуем размер под нашу сцену
+
+                        for(let k=0; k < pos.count; k++) {
+                            const vx = (pos.getX(k) - center.x) * scale;
+                            const vy = (pos.getY(k) - center.y) * scale;
+                            const vz = (pos.getZ(k) - center.z) * scale;
+                            modelVertices.push(vx, vy, vz);
+                        }
+                    }
+                });
+
+                if(modelVertices.length === 0) { alert("Модель пуста или не поддерживается"); return; }
+
+                // Заполняем массив частиц (сэмплинг)
+                for(let i=0; i<CONFIG.count; i++) {
+                    const idx = i % (modelVertices.length / 3);
+                    shapes.custom[i*3] = modelVertices[idx*3];
+                    shapes.custom[i*3+1] = modelVertices[idx*3+1];
+                    shapes.custom[i*3+2] = modelVertices[idx*3+2];
+                }
+
+                CONFIG.shape = 'custom';
+                CONFIG.appMode = 'VIEW';
+                // Обновляем UI
+                document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+                AudioSys.playTone(400, 'square');
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- UI HANDLERS (Manual attachment because of module scope) ---
+        const raycaster = new THREE.Raycaster();
+        const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+        // Buttons
+        document.getElementById('btn-view').onclick = () => setAppMode('VIEW');
+        document.getElementById('btn-draw').onclick = () => setAppMode('DRAW');
+        document.getElementById('clear-btn').onclick = () => {
+            STATE.drawIndex = 0;
+            for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
+            AudioSys.playTone(300, 'triangle');
+        };
+
+        // Sliders
+        document.getElementById('bloom-slider').oninput = (e) => { 
+            bloomPass.strength = parseFloat(e.target.value); 
+            document.getElementById('val-bloom').innerText = e.target.value; 
+        };
+        document.getElementById('size-slider').oninput = (e) => { 
+            CONFIG.size = parseFloat(e.target.value); material.size = CONFIG.size; 
+            document.getElementById('val-size').innerText = e.target.value; 
+        };
+        document.getElementById('fric-slider').oninput = (e) => { 
+            CONFIG.spinFriction = parseFloat(e.target.value); 
+            document.getElementById('val-fric').innerText = e.target.value; 
+        };
+
+        // Shapes
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                CONFIG.shape = btn.dataset.shape;
+                setAppMode('VIEW');
+                AudioSys.playTone(600, 'sine');
+            };
+        });
+
+        function setAppMode(mode) {
+            CONFIG.appMode = mode;
+            document.getElementById('btn-view').className = mode === 'VIEW' ? 'mode-btn active' : 'mode-btn';
+            document.getElementById('btn-draw').className = mode === 'DRAW' ? 'mode-btn active' : 'mode-btn';
+            document.getElementById('view-controls').style.display = mode === 'VIEW' ? 'block' : 'none';
+            document.getElementById('draw-controls').style.display = mode === 'DRAW' ? 'block' : 'none';
+            
+            if(mode === 'DRAW') {
+                CONFIG.shape = 'custom';
+                STATE.drawIndex = 0;
+                for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
+                STATE.pos.set(0,0,0); STATE.vel.set(0,0,0);
+            }
         }
 
-        window.addEventListener('mousemove', e => {
-            STATE.mouse.x = (e.clientX/window.innerWidth)*2 - 1;
-            STATE.mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
-            raycaster.setFromCamera(STATE.mouse, camera);
-            raycaster.ray.intersectPlane(drawPlane, STATE.mouseWorld);
-        });
-        window.addEventListener('mousedown', () => { if(CONFIG.appMode === 'DRAW') STATE.isMouseDrawing = true; });
-        window.addEventListener('mouseup', () => STATE.isMouseDrawing = false);
-
-        // --- ANIMATION ---
+        // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            if(isNaN(STATE.pos.x)) STATE.pos.set(0,0,0);
 
-            STATE.smoothHand.lerp(STATE.hand1, 0.2); 
-
+            STATE.smoothHand.lerp(STATE.hand1, 0.2);
             const targetShape = shapes[CONFIG.shape];
             const posAttr = geometry.attributes.position;
-            const colAttr = geometry.attributes.color;
 
-            // DRAWING LOGIC
+            // DRAWING
             if(CONFIG.appMode === 'DRAW') {
                 cursor.visible = true;
                 let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
@@ -435,10 +439,11 @@
 
                 if(inputPos) {
                     cursor.material.color.setHex(0xff00ff);
-                    const dist = inputPos.distanceTo(STATE.lastDrawPos);
+                    if(STATE.activeHandId) cursor.rotation.z += 0.2;
                     
+                    const dist = inputPos.distanceTo(STATE.lastDrawPos);
                     if(dist > 0.05 || STATE.drawIndex === 0) {
-                        const steps = Math.min(20, Math.ceil(dist/0.03));
+                        const steps = Math.min(20, Math.ceil(dist/0.05));
                         for(let s=0; s<=steps; s++) {
                             if(STATE.drawIndex >= CONFIG.count) break;
                             const t = s/steps;
@@ -450,7 +455,8 @@
                         STATE.lastDrawPos.copy(inputPos);
                     }
                 } else {
-                    cursor.material.color.setHex(0x00ff00);
+                    cursor.material.color.setHex(0x00ffff);
+                    cursor.rotation.z = 0;
                     if(STATE.activeHandId) STATE.lastDrawPos.copy(STATE.smoothHand);
                     else STATE.lastDrawPos.copy(STATE.mouseWorld);
                 }
@@ -458,70 +464,46 @@
                 cursor.visible = false;
             }
 
+            // PARTICLES MOVEMENT
             for(let i=0; i<CONFIG.count; i++) {
                 const ix = i*3;
                 let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
 
-                if(STATE.mode === 'GRAB') { tx *= 0.85; ty *= 0.85; tz *= 0.85; tx+=(Math.random()-0.5)*0.2; }
+                if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } // Сжатие при грабе
 
-                if (STATE.entropy > 0.01) {
-                    tx = tx*(1-STATE.entropy) + STATE.scatterOffset[ix]*STATE.entropy;
-                    ty = ty*(1-STATE.entropy) + STATE.scatterOffset[ix+1]*STATE.entropy;
-                    tz = tz*(1-STATE.entropy) + STATE.scatterOffset[ix+2]*STATE.entropy;
+                if(STATE.entropy > 0.01) {
+                    tx += STATE.scatterOffset[ix] * STATE.entropy;
+                    ty += STATE.scatterOffset[ix+1] * STATE.entropy;
+                    tz += STATE.scatterOffset[ix+2] * STATE.entropy;
                 }
 
-                let lerpSpeed = (CONFIG.appMode === 'DRAW') ? 0.5 : 0.1;
-                posAttr.array[ix] += (tx - posAttr.array[ix]) * lerpSpeed;
-                posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * lerpSpeed;
-                posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * lerpSpeed;
-
-                if(CONFIG.useTexture) {
-                    colAttr.array[ix] = STATE.originalColors[ix];
-                    colAttr.array[ix+1] = STATE.originalColors[ix+1];
-                    colAttr.array[ix+2] = STATE.originalColors[ix+2];
-                } else {
-                    let h = CONFIG.hue + (i/CONFIG.count)*0.1; 
-                    let s = 0.8, l = 0.6;
-                    if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) l=1.0;
-                    if(STATE.mode === 'GRAB') s=0.0;
-                    c3.setHSL(h%1.0, s, l);
-                    colAttr.array[ix]=c3.r; colAttr.array[ix+1]=c3.g; colAttr.array[ix+2]=c3.b;
-                }
+                // Smooth morphing
+                posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.08;
+                posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
+                posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
             }
-            posAttr.needsUpdate = true; colAttr.needsUpdate = true;
+            posAttr.needsUpdate = true;
 
-            // PHYSICS (VIEW MODE)
+            // PHYSICS CONTAINER
             if(CONFIG.appMode === 'VIEW') {
                 const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
 
                 if (STATE.mode === 'GRAB') {
-                    STATE.pos.lerp(activePos, 0.2); 
-                    STATE.rotVel.x *= 0.8; STATE.rotVel.y *= 0.8;
-                }
-                else if (STATE.mode === 'DUAL') {
-                    const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
-                    STATE.pos.lerp(mid, 0.1);
-                    const dx = STATE.hand2.x - STATE.hand1.x;
-                    const dy = STATE.hand2.y - STATE.hand1.y;
-                    particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
-                }
-                else if (STATE.mode === 'ROTATE') {
+                    STATE.pos.lerp(activePos, 0.1);
+                    STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
+                } else if (STATE.mode === 'ROTATE') {
                     const dX = activePos.x - STATE.prevHand.x;
                     const dY = activePos.y - STATE.prevHand.y;
-                    STATE.rotVel.y += dX * 0.2;
-                    STATE.rotVel.x += -dY * 0.2;
-                    STATE.vel.multiplyScalar(0.9);
-                }
-                else {
+                    STATE.rotVel.y += dX * 0.3;
+                    STATE.rotVel.x -= dY * 0.3;
+                } else {
                     STATE.pos.add(STATE.vel);
-                    // --- ИСПРАВЛЕНИЕ ФИЗИКИ НИЖЕ ---
-                    STATE.vel.multiplyScalar(CONFIG.spinFriction); // Применяем инерцию к движению
-                    // -------------------------------
-                    if(STATE.pos.x > 16 || STATE.pos.x < -16) STATE.vel.x *= -0.7;
-                    if(STATE.pos.y > 10 || STATE.pos.y < -10) STATE.vel.y *= -0.7;
-                    particles.rotation.y += 0.002;
+                    STATE.vel.multiplyScalar(CONFIG.spinFriction);
+                    if(Math.abs(STATE.pos.x)>15) STATE.vel.x*=-1;
+                    if(Math.abs(STATE.pos.y)>10) STATE.vel.y*=-1;
+                    particles.rotation.y += 0.001;
                 }
-
+                
                 particles.rotation.x += STATE.rotVel.x * 0.1;
                 particles.rotation.y += STATE.rotVel.y * 0.1;
                 STATE.rotVel.x *= CONFIG.spinFriction; STATE.rotVel.y *= CONFIG.spinFriction;
@@ -531,95 +513,90 @@
                 particles.position.copy(STATE.pos);
                 STATE.prevHand.copy(activePos);
             } else {
-                // RESET IN DRAW
                 particles.position.set(0,0,0);
                 particles.rotation.set(0,0,0);
                 particles.scale.setScalar(1);
             }
 
-            renderer.render(scene, camera);
+            // RENDER (Use Composer for Bloom)
+            composer.render();
         }
 
-        // --- TRACKING ---
+
+        // --- INPUT HANDLING ---
+        window.addEventListener('mousemove', e => {
+            STATE.mouse.x = (e.clientX/window.innerWidth)*2 - 1;
+            STATE.mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
+            raycaster.setFromCamera(STATE.mouse, camera);
+            raycaster.ray.intersectPlane(drawPlane, STATE.mouseWorld);
+        });
+        window.addEventListener('mousedown', () => { if(CONFIG.appMode==='DRAW') STATE.isMouseDrawing=true; });
+        window.addEventListener('mouseup', () => STATE.isMouseDrawing=false);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+
+        // --- MEDIAPIPE LOGIC ---
         const uiMode = document.getElementById('mode-disp');
         const loader = document.getElementById('loader');
-        const videoElement = document.getElementById('video-feed');
 
         function onResults(results) {
             if(loader) loader.style.display = 'none';
             const count = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
-
-            let h1=null, h2=null;
-            let x1=0, y1=0, x2=0, y2=0;
-
-            if (count > 0) {
+            
+            let h1=null, x1=0, y1=0;
+            if(count>0) {
                 const lm1 = results.multiHandLandmarks[0];
                 h1 = analyze(lm1);
                 x1 = (1 - lm1[9].x - 0.5) * 25; y1 = (1 - lm1[9].y - 0.5) * 15;
             }
-            if (count > 1) {
+            if(count>1) {
                 const lm2 = results.multiHandLandmarks[1];
-                h2 = analyze(lm2);
-                x2 = (1 - lm2[9].x - 0.5) * 25; y2 = (1 - lm2[9].y - 0.5) * 15;
-                STATE.hand2.set(x2, y2, 0);
+                const x2 = (1 - lm2[9].x - 0.5) * 25; const y2 = (1 - lm2[9].y - 0.5) * 15;
+                STATE.hand2.set(x2,y2,0);
             }
 
-            // DRAW MODE LOGIC
             if(CONFIG.appMode === 'DRAW') {
-                if(h1 && h1.isPinch) { // OK Gesture -> Save
+                if(h1 && h1.isPinch) {
                     setAppMode('VIEW');
                     AudioSys.playTone(600);
                     return;
                 }
                 if(h1 && h1.isGrab) {
-                    STATE.activeHandId = 1;
-                    STATE.hand1.set(x1, y1, 0);
-                    STATE.isHandDrawing = true;
-                    updateMode('РИСУЕМ (КУЛАК)');
+                    STATE.activeHandId = 1; STATE.hand1.set(x1,y1,0); STATE.isHandDrawing=true;
+                    updateMode('DRAWING (FIST)');
                 } else {
-                    STATE.isHandDrawing = false;
-                    if(h1) { STATE.hand1.set(x1,y1,0); STATE.activeHandId = 1; }
-                    updateMode(STATE.isMouseDrawing ? 'РИСУЕМ (МЫШЬ)' : 'КУРСОР');
+                    STATE.isHandDrawing=false;
+                    if(h1) { STATE.hand1.set(x1,y1,0); STATE.activeHandId=1; }
+                    updateMode('CURSOR');
                 }
                 return;
             }
 
-            // VIEW MODE LOGIC
-            if (count === 2 && !h1.isGrab && !h2.isGrab) {
-                STATE.hand1.set(x1, y1, 0);
-                const dist = STATE.hand1.distanceTo(STATE.hand2);
-                STATE.entropy = (dist < 6.0) ? 0 : Math.min(1.0, (dist - 6.0)/8.0);
-                updateMode('DUAL');
-                return;
-            } else {
-                STATE.entropy = 0;
-            }
+            // View Mode
+            if(count===2) { // Dual hand entropy
+                 STATE.hand1.set(x1, y1, 0);
+                 const dist = STATE.hand1.distanceTo(STATE.hand2);
+                 STATE.entropy = (dist < 5) ? 0 : Math.min(1.0, (dist-5)/10);
+                 updateMode('DUAL HANDS');
+                 return;
+            } else { STATE.entropy = 0; }
 
-            if (count > 0) {
-                if (h2 && h2.isGrab) { STATE.activeHandId = 2; updateMode('GRAB'); return; }
-                STATE.activeHandId = 1;
-                STATE.hand1.set(x1, y1, 0);
-
-                if (h1.isGrab) {
-                    updateMode('GRAB');
-                    return;
-                }
-
-                if (h1.isPinch) {
-                    if (STATE.mode !== 'RESIZE') { STATE.resizeBaseY = y1; STATE.resizeBaseS = STATE.scale; }
-                    const deltaY = y1 - STATE.resizeBaseY;
-                    STATE.scale = Math.max(0.3, Math.min(3.0, STATE.resizeBaseS + deltaY * 0.3));
+            if(count>0) {
+                STATE.activeHandId = 1; STATE.hand1.set(x1,y1,0);
+                if(h1.isGrab) { updateMode('GRAB'); return; }
+                if(h1.isPinch) {
+                    if(STATE.mode!=='RESIZE') { STATE.resizeBaseY=y1; STATE.resizeBaseS=STATE.scale; }
+                    STATE.scale = Math.max(0.3, Math.min(3.0, STATE.resizeBaseS + (y1-STATE.resizeBaseY)*0.3));
                     updateMode('RESIZE');
                     return;
                 }
-
-                if (h1.isOpen) {
-                    updateMode('ROTATE');
-                    return;
-                }
-            } else {
-                updateMode('IDLE');
+                if(h1.isOpen) { updateMode('ROTATE'); return; }
             }
+            updateMode('IDLE');
         }
 
         function analyze(lm) {
@@ -627,52 +604,29 @@
             const isMiddleUp = lm[12].y < lm[10].y;
             const isRingUp = lm[16].y < lm[14].y;
             const isPinkyUp = lm[20].y < lm[18].y;
-            const isThumbOpen = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y) > 0.2;
-            
-            // Simplified Pinch for stability
             const pinchDist = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
-            const isPinch = pinchDist < 0.08 && isMiddleUp; 
-
-            let fingers = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
-            // Simplified Grab (0 or 1 finger)
-            const isGrab = (fingers <= 1);
-
-            return { isGrab, isPinch, isOpen: (fingers >= 4) };
+            
+            const fingers = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
+            return { isGrab: fingers<=1, isPinch: pinchDist<0.05 && isMiddleUp, isOpen: fingers>=4 };
         }
 
         function updateMode(m) {
             if(STATE.mode === m) return;
             STATE.mode = m;
             uiMode.innerText = m;
-            
-            // MAP internal mode to Russian UI text if needed, or keep logic simple
-            const ru = {
-                'GRAB': 'КУЛАК (ТАЩИТЬ)',
-                'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)',
-                'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)',
-                'DUAL': 'ДВЕ РУКИ',
-                'IDLE': 'ОЖИДАНИЕ',
-                'РИСУЕМ (КУЛАК)': 'РИСУЕМ (КУЛАК)',
-                'РИСУЕМ (МЫШЬ)': 'РИСУЕМ (МЫШЬ)',
-                'КУРСОР': 'КУРСОР'
-            };
-            uiMode.innerText = ru[m] || m;
-
-            const cols = { 'GRAB':'#fff', 'DUAL':'#f0f', 'ROTATE':'gold', 'RESIZE':'#0f0', 'РИСУЕМ (КУЛАК)':'#ff00ff' };
-            uiMode.style.color = cols[m] || '#0ff';
-            if(m==='GRAB') AudioSys.playTone(200, 'sine');
+            if(m==='GRAB') AudioSys.playTone(150, 'sawtooth');
+            if(m==='RESIZE') AudioSys.playTone(400, 'sine');
         }
 
         const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}` });
         hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+        hands.onResults(onResults);
         
-        try {
-            hands.onResults(onResults);
-            const cam = new Camera(videoElement, { onFrame: async () => await hands.send({image: videoElement}), width: 640, height: 480 });
-            cam.start();
-        } catch(e) { console.error(e); }
-
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        const cam = new Camera(document.getElementById('video-feed'), {
+            onFrame: async () => await hands.send({image: document.getElementById('video-feed')}),
+            width: 640, height: 480
+        });
+        cam.start();
         animate();
     </script>
 </body>
