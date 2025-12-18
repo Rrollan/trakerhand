@@ -2,10 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER-HAND V60: NEON GOD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYBER-HAND V70: ULTIMATE</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Segoe UI', monospace; color: white; user-select: none; }
+        /* Блокируем скролл и зум для жестов (ИЗ V50) */
+        body { 
+            margin: 0; overflow: hidden; background-color: #050505; 
+            font-family: 'Segoe UI', monospace; color: white; 
+            user-select: none; -webkit-user-select: none;
+            touch-action: none; 
+        }
         
         #bg-layer { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
@@ -15,19 +21,19 @@
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
         #video-feed { 
-            position: absolute; bottom: 20px; left: 20px; width: 160px; z-index: 2; 
+            position: absolute; bottom: 20px; left: 20px; width: 120px; z-index: 2; 
             border-radius: 12px; border: 1px solid rgba(0, 255, 255, 0.3); 
-            transform: scaleX(-1); opacity: 0.6; 
+            transform: scaleX(-1); opacity: 0.6; pointer-events: none;
         }
         
         #ui-panel { 
-            position: absolute; top: 20px; right: 20px; width: 300px; 
-            padding: 20px; background: rgba(10, 10, 15, 0.90); 
+            position: absolute; top: 10px; right: 10px; width: 90%; max-width: 300px;
+            padding: 15px; background: rgba(10, 10, 15, 0.90); 
             backdrop-filter: blur(20px); border-radius: 16px; 
             border: 1px solid rgba(0, 255, 255, 0.2); 
             z-index: 10; transition: transform 0.3s ease;
             box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
-            max-height: 90vh; overflow-y: auto;
+            max-height: 85vh; overflow-y: auto;
         }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
@@ -37,11 +43,11 @@
         .label { display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-bottom: 5px; text-transform: uppercase; }
         
         input[type=range] { width: 100%; -webkit-appearance: none; background: #333; height: 3px; border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #00ffff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px #00ffff; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #00ffff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px #00ffff; border: 2px solid #000;}
         
         .mode-switch { display: flex; gap: 5px; margin-bottom: 15px; background: #000; padding: 4px; border-radius: 8px; border: 1px solid #333; }
         .mode-btn { 
-            flex: 1; padding: 8px; border: none; background: transparent; color: #666; 
+            flex: 1; padding: 10px; border: none; background: transparent; color: #666; 
             font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; 
         }
         .mode-btn.active { background: #00ffff; color: #000; box-shadow: 0 0 15px rgba(0,255,255,0.4); }
@@ -55,24 +61,27 @@
         }
         .file-upload:hover { background: rgba(0, 255, 255, 0.15); box-shadow: 0 0 15px rgba(0,255,255,0.2); }
         input[type="file"] { display: none; }
+        input[type="color"] { border: none; width: 100%; height: 30px; background: none; cursor: pointer; padding: 0;}
 
         .shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .shape-btn { background: #111; border: 1px solid #333; color: #ccc; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: 0.2s; text-transform: uppercase;}
+        .shape-btn { background: #111; border: 1px solid #333; color: #ccc; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: 0.2s; text-transform: uppercase;}
         .shape-btn:hover { border-color: #fff; }
         .shape-btn.active { border-color: #00ffff; color: #00ffff; box-shadow: inset 0 0 10px rgba(0,255,255,0.2); }
 
-        #clear-btn { width: 100%; padding: 10px; background: #300; color: #f55; margin-top: 5px; border: 1px solid #600; border-radius: 6px; cursor: pointer;}
+        #clear-btn { width: 100%; padding: 12px; background: #300; color: #f55; margin-top: 5px; border: 1px solid #600; border-radius: 6px; cursor: pointer;}
         
         #mode-disp { text-align: center; color: #00ffff; font-weight: bold; font-size: 12px; margin-top: 15px; letter-spacing: 1px; padding: 8px; background: rgba(0,255,255,0.05); border-radius: 4px; border: 1px solid rgba(0,255,255,0.1);}
 
-        #loader { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:99; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#00ffff; font-size:14px; transition: opacity 0.5s; }
+        #loader { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:99; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#00ffff; font-size:14px; transition: opacity 0.5s; text-align: center; }
         
         #start-screen { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 999; display:flex; justify-content:center; align-items:center; cursor:pointer; flex-direction: column;}
         #start-btn { font-size: 20px; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; border-radius: 50px; background: transparent; transition: 0.3s; box-shadow: 0 0 20px rgba(0,255,255,0.2); text-transform: uppercase; letter-spacing: 2px;}
         #start-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 50px rgba(0,255,255,0.8); }
+        
+        #ui-hint { position: absolute; top: 20px; right: 20px; color: rgba(255,255,255,0.3); font-size: 12px; display: none; pointer-events: none; z-index: 5; }
     </style>
 
-    <!-- ИСПОЛЬЗУЕМ МОДУЛИ ДЛЯ БИБЛИОТЕК (СОВРЕМЕННЫЙ ПОДХОД) -->
+    <!-- ИМПОРТЫ БИБЛИОТЕК (МОДУЛИ) -->
     <script type="importmap">
         {
             "imports": {
@@ -93,17 +102,19 @@
 <body>
 
     <div id="bg-layer"></div>
-    <div id="loader"><div>ЗАГРУЗКА ЯДРА...</div></div>
+    <div id="loader"><div>ЗАГРУЗКА ЯДРА...</div><div style="font-size:10px; color:#666; margin-top:5px;">Разрешите доступ к камере</div></div>
 
     <div id="start-screen">
         <button id="start-btn">INITIATE SYSTEM</button>
-        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM ENGINE | OBJ LOADER | HAND TRACKING</div>
+        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM | OBJ | TEXTURE | MOBILE</div>
     </div>
+
+    <div id="ui-hint">Настройки</div>
 
     <div id="ui-panel">
         <div class="header">
-            <h2>CYBER-HAND V60</h2>
-            <button onclick="document.getElementById('ui-panel').style.display='none'" style="background:none; border:none; color:#0ff; cursor:pointer;">[-]</button>
+            <h2>CYBER-HAND V70</h2>
+            <button onclick="document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block';" style="background:none; border:none; color:#0ff; cursor:pointer; font-size:16px;">✕</button>
         </div>
 
         <div class="mode-switch">
@@ -112,11 +123,26 @@
         </div>
 
         <div id="view-controls">
-            <!-- НОВАЯ ФУНКЦИЯ: ЗАГРУЗКА 3D МОДЕЛИ -->
+            <!-- ВЕРНУЛ ВСЕ КНОПКИ ЗАГРУЗКИ -->
             <label class="file-upload">
                 📥 ЗАГРУЗИТЬ 3D МОДЕЛЬ (.OBJ)
                 <input type="file" id="obj-input" accept=".obj">
             </label>
+            
+            <label class="file-upload" style="border-color: #ff00ff; color: #ff00ff;">
+                🖼 ЗАГРУЗИТЬ ТЕКСТУРУ (ФОТО)
+                <input type="file" id="tex-input" accept="image/*">
+            </label>
+
+            <label class="file-upload" style="border-color: #888; color: #888;">
+                🌆 ЗАГРУЗИТЬ ФОН
+                <input type="file" id="bg-input" accept="image/*">
+            </label>
+
+            <div class="control-row">
+                <div class="label"><span>Цвет</span></div>
+                <input type="color" id="color-input" value="#00ffff">
+            </div>
 
             <div class="control-row">
                 <div class="label"><span>Свечение (Bloom)</span><span id="val-bloom">1.5</span></div>
@@ -143,7 +169,8 @@
 
         <div id="draw-controls" style="display:none;">
             <div style="text-align:center; font-size:11px; color:#fff; margin-bottom:10px; background: rgba(0,255,255,0.1); padding: 10px; border-radius: 6px;">
-                Жест <b>"ОК"</b> сохраняет рисунок
+                1. <b>Палец/Мышь/Кулак</b> — Рисовать<br>
+                2. Жест <b>"ОК"</b> — Сохранить
             </div>
             <button id="clear-btn">ОЧИСТИТЬ</button>
         </div>
@@ -151,8 +178,8 @@
         <div id="mode-disp">SYSTEM READY</div>
     </div>
 
-    <video id="video-feed" playsinline></video>
-    <div id="canvas-container"></div>
+    <video id="video-feed" playsinline webkit-playsinline></video>
+    <div id="canvas-container" onclick="document.getElementById('ui-panel').style.transform = 'translateX(0)'; document.getElementById('ui-hint').style.display='none';"></div>
 
     <script type="module">
         import * as THREE from 'three';
@@ -161,8 +188,8 @@
         import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
-        // --- AUDIO ---
-        const AudioSys = {
+        // --- AUDIO SYSTEM ---
+        window.AudioSys = {
             ctx: null, masterGain: null, active: false,
             init: function() {
                 if(this.active) return;
@@ -173,6 +200,7 @@
                 this.masterGain.connect(this.ctx.destination);
                 this.active = true;
                 document.getElementById('start-screen').style.display = 'none';
+                if(this.ctx.state === 'suspended') this.ctx.resume();
             },
             playTone: function(freq, type='sine') {
                 if(!this.active) return;
@@ -186,16 +214,18 @@
             }
         };
 
-        document.getElementById('start-btn').addEventListener('click', () => AudioSys.init());
+        document.getElementById('start-btn').addEventListener('click', () => window.AudioSys.init());
 
         // --- CONFIG ---
         const CONFIG = {
-            count: 20000, // Больше частиц для крутости
+            count: 15000, // Оптимум для телефонов с Bloom
             size: 0.06,
             shape: 'sphere',
+            hue: 0.5,
             spinFriction: 0.95,
             appMode: 'VIEW',
-            bloomStr: 1.5
+            bloomStr: 1.5,
+            useTexture: false
         };
 
         const STATE = {
@@ -206,27 +236,25 @@
             drawIndex: 0, isMouseDrawing: false, isHandDrawing: false, activeHandId: 0,
             scale: 1.0, entropy: 0.0, mode: 'IDLE',
             scatterOffset: new Float32Array(CONFIG.count * 3),
+            originalColors: new Float32Array(CONFIG.count * 3),
             resizeBaseY: 0, resizeBaseS: 1.0
         };
 
         // --- THREE JS INIT ---
         const scene = new THREE.Scene();
-        // Туман для глубины
         scene.fog = new THREE.FogExp2(0x000000, 0.02);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         camera.position.z = 8;
         
-        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); // Antialias off for bloom perf
+        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // Sharpness
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for perf
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         // --- POST PROCESSING (BLOOM) ---
         const renderScene = new RenderPass(scene, camera);
-        
-        // Resolution, Strength, Radius, Threshold
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.strength = CONFIG.bloomStr;
         bloomPass.radius = 0.5;
@@ -240,7 +268,6 @@
         function getTexture() {
             const c = document.createElement('canvas'); c.width=32; c.height=32;
             const ctx = c.getContext('2d');
-            // Более жесткий градиент для неонового эффекта
             const g = ctx.createRadialGradient(16,16,0,16,16,16);
             g.addColorStop(0,'rgba(255,255,255,1)');
             g.addColorStop(0.4,'rgba(255,255,255,0.3)');
@@ -253,9 +280,8 @@
         const positions = new Float32Array(CONFIG.count * 3);
         const colors = new Float32Array(CONFIG.count * 3);
         const shapes = { sphere: [], galaxy: [], dna: [], cube: [], custom: [] };
-        
-        // Generate Shapes
         const colorObj = new THREE.Color();
+
         for(let i=0; i<CONFIG.count; i++) {
             // SPHERE
             const phi = Math.acos(-1 + (2*i)/CONFIG.count);
@@ -272,20 +298,15 @@
             const x = Math.cos(t) * radius;
             const y = (i / CONFIG.count) * 12 - 6;
             const z = Math.sin(t) * radius;
-            // Двойная спираль
-            if (i % 2 === 0) shapes.dna.push(x, y, z);
-            else shapes.dna.push(-x, y, -z);
+            if (i % 2 === 0) shapes.dna.push(x, y, z); else shapes.dna.push(-x, y, -z);
 
             // CUBE
             shapes.cube.push((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
-            
-            // CUSTOM Placeholder
             shapes.custom.push(9999,9999,9999);
 
-            // COLORS (Cyberpunk Palette: Cyan & Magenta)
-            if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); // Cyan
-            else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); // Magenta
-            
+            // COLORS
+            if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); 
+            else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); 
             colors[i*3] = colorObj.r; colors[i*3+1] = colorObj.g; colors[i*3+2] = colorObj.b;
 
             STATE.scatterOffset[i*3] = (Math.random()-0.5)*30;
@@ -298,47 +319,36 @@
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         const material = new THREE.PointsMaterial({ 
-            size: CONFIG.size, 
-            map: getTexture(), 
-            vertexColors: true, 
-            blending: THREE.AdditiveBlending, 
-            depthWrite: false, 
-            transparent: true 
+            size: CONFIG.size, map: getTexture(), vertexColors: true, 
+            blending: THREE.AdditiveBlending, depthWrite: false, transparent: true 
         });
 
         const particles = new THREE.Points(geometry, material);
         scene.add(particles);
 
-        // Cursor
         const cursor = new THREE.Mesh(
             new THREE.RingGeometry(0.15, 0.2, 32),
             new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
         );
         scene.add(cursor); cursor.visible = false;
 
-        // --- OBJ LOADER LOGIC ---
+        // --- OBJ LOADER ---
         const objLoader = new OBJLoader();
         document.getElementById('obj-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(!file) return;
-
             const reader = new FileReader();
             reader.onload = function(ev) {
                 const contents = ev.target.result;
-                const object = objLoader.parse(contents); // Синхронный парсинг
-
-                // Извлекаем вершины из модели
+                const object = objLoader.parse(contents);
                 let modelVertices = [];
                 object.traverse((child) => {
                     if (child.isMesh) {
                         const pos = child.geometry.attributes.position;
-                        // Масштабирование если нужно
                         child.geometry.computeBoundingSphere();
                         const center = child.geometry.boundingSphere.center;
                         const radius = child.geometry.boundingSphere.radius;
-                        
-                        const scale = 6.0 / radius; // Нормализуем размер под нашу сцену
-
+                        const scale = 6.0 / radius;
                         for(let k=0; k < pos.count; k++) {
                             const vx = (pos.getX(k) - center.x) * scale;
                             const vy = (pos.getY(k) - center.y) * scale;
@@ -347,28 +357,59 @@
                         }
                     }
                 });
-
-                if(modelVertices.length === 0) { alert("Модель пуста или не поддерживается"); return; }
-
-                // Заполняем массив частиц (сэмплинг)
+                if(modelVertices.length === 0) { alert("Bad Model"); return; }
                 for(let i=0; i<CONFIG.count; i++) {
                     const idx = i % (modelVertices.length / 3);
                     shapes.custom[i*3] = modelVertices[idx*3];
                     shapes.custom[i*3+1] = modelVertices[idx*3+1];
                     shapes.custom[i*3+2] = modelVertices[idx*3+2];
                 }
-
                 CONFIG.shape = 'custom';
+                CONFIG.useTexture = false; // Reset texture when loading OBJ
                 CONFIG.appMode = 'VIEW';
-                // Обновляем UI
                 document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
-                AudioSys.playTone(400, 'square');
+                window.AudioSys.playTone(400, 'square');
             };
             reader.readAsText(file);
         });
 
+        // --- TEXTURE LOADER (RESTORED) ---
+        const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
+        document.getElementById('tex-input').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if(f) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const img = new Image();
+                    img.onload = () => {
+                        mapCanvas.width = img.width; mapCanvas.height = img.height;
+                        mapCtx.drawImage(img,0,0);
+                        const data = mapCtx.getImageData(0,0,img.width,img.height).data;
+                        for(let i=0; i<CONFIG.count; i++) {
+                            const phi = Math.acos(-1 + (2*i)/CONFIG.count);
+                            const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
+                            let u = (theta % (2*Math.PI))/(2*Math.PI);
+                            let v = phi / Math.PI;
+                            const px = Math.floor(u*img.width); const py = Math.floor(v*img.height);
+                            const idx = (py*img.width+px)*4;
+                            STATE.originalColors[i*3] = data[idx]/255;
+                            STATE.originalColors[i*3+1] = data[idx+1]/255;
+                            STATE.originalColors[i*3+2] = data[idx+2]/255;
+                        }
+                        CONFIG.useTexture = true;
+                        // For textured bloom, we might want to reduce bloom slightly
+                        bloomPass.strength = 0.8; 
+                        document.getElementById('bloom-slider').value = 0.8;
+                        document.getElementById('val-bloom').innerText = 0.8;
+                        window.AudioSys.playTone(500, 'sine');
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(f);
+            }
+        });
 
-        // --- UI HANDLERS (Manual attachment because of module scope) ---
+        // --- UI HANDLERS ---
         const raycaster = new THREE.Raycaster();
         const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
@@ -378,10 +419,10 @@
         document.getElementById('clear-btn').onclick = () => {
             STATE.drawIndex = 0;
             for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
-            AudioSys.playTone(300, 'triangle');
+            window.AudioSys.playTone(300, 'triangle');
         };
 
-        // Sliders
+        // Sliders & Inputs
         document.getElementById('bloom-slider').oninput = (e) => { 
             bloomPass.strength = parseFloat(e.target.value); 
             document.getElementById('val-bloom').innerText = e.target.value; 
@@ -394,6 +435,16 @@
             CONFIG.spinFriction = parseFloat(e.target.value); 
             document.getElementById('val-fric').innerText = e.target.value; 
         };
+        document.getElementById('color-input').addEventListener('input', e => {
+            const c = new THREE.Color(e.target.value);
+            const hsl = {}; c.getHSL(hsl);
+            CONFIG.hue = hsl.h;
+            CONFIG.useTexture = false;
+        });
+        document.getElementById('bg-input').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
+        });
 
         // Shapes
         document.querySelectorAll('.shape-btn').forEach(btn => {
@@ -402,7 +453,7 @@
                 btn.classList.add('active');
                 CONFIG.shape = btn.dataset.shape;
                 setAppMode('VIEW');
-                AudioSys.playTone(600, 'sine');
+                window.AudioSys.playTone(600, 'sine');
             };
         });
 
@@ -421,6 +472,41 @@
             }
         }
 
+        // --- INPUT HANDLING (TOUCH + MOUSE RESTORED) ---
+        function updatePointer(x, y) {
+            STATE.mouse.x = (x / window.innerWidth) * 2 - 1;
+            STATE.mouse.y = -(y / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(STATE.mouse, camera);
+            raycaster.ray.intersectPlane(drawPlane, STATE.mouseWorld);
+        }
+
+        window.addEventListener('mousemove', e => updatePointer(e.clientX, e.clientY));
+        window.addEventListener('mousedown', () => { if(CONFIG.appMode==='DRAW') STATE.isMouseDrawing=true; });
+        window.addEventListener('mouseup', () => STATE.isMouseDrawing=false);
+
+        // TOUCH EVENTS
+        window.addEventListener('touchstart', e => {
+            if(e.target.closest('#ui-panel') || e.target.closest('#start-screen')) return;
+            if(CONFIG.appMode === 'DRAW') {
+                STATE.isMouseDrawing = true; 
+                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, {passive: false});
+
+        window.addEventListener('touchmove', e => {
+            if(e.target.closest('#ui-panel')) return;
+            if(STATE.isMouseDrawing) {
+                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, {passive: false});
+        window.addEventListener('touchend', () => STATE.isMouseDrawing = false);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
         // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
@@ -428,6 +514,7 @@
             STATE.smoothHand.lerp(STATE.hand1, 0.2);
             const targetShape = shapes[CONFIG.shape];
             const posAttr = geometry.attributes.position;
+            const colAttr = geometry.attributes.color;
 
             // DRAWING
             if(CONFIG.appMode === 'DRAW') {
@@ -469,7 +556,7 @@
                 const ix = i*3;
                 let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
 
-                if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } // Сжатие при грабе
+                if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } 
 
                 if(STATE.entropy > 0.01) {
                     tx += STATE.scatterOffset[ix] * STATE.entropy;
@@ -477,12 +564,28 @@
                     tz += STATE.scatterOffset[ix+2] * STATE.entropy;
                 }
 
-                // Smooth morphing
                 posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.08;
                 posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
                 posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
+
+                // Color handling (Texture vs Gradient)
+                if(CONFIG.useTexture) {
+                    colAttr.array[ix] = STATE.originalColors[ix];
+                    colAttr.array[ix+1] = STATE.originalColors[ix+1];
+                    colAttr.array[ix+2] = STATE.originalColors[ix+2];
+                } else {
+                    // Default cyberpunk gradient
+                    if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) {
+                        colAttr.array[ix]=1; colAttr.array[ix+1]=1; colAttr.array[ix+2]=1;
+                    } else {
+                        let h = CONFIG.hue + (i/CONFIG.count)*0.1;
+                        colorObj.setHSL(h, 1.0, 0.6);
+                        colAttr.array[ix] = colorObj.r; colAttr.array[ix+1] = colorObj.g; colAttr.array[ix+2] = colorObj.b;
+                    }
+                }
             }
             posAttr.needsUpdate = true;
+            colAttr.needsUpdate = true;
 
             // PHYSICS CONTAINER
             if(CONFIG.appMode === 'VIEW') {
@@ -496,6 +599,12 @@
                     const dY = activePos.y - STATE.prevHand.y;
                     STATE.rotVel.y += dX * 0.3;
                     STATE.rotVel.x -= dY * 0.3;
+                } else if (STATE.mode === 'DUAL HANDS') {
+                    const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
+                    STATE.pos.lerp(mid, 0.1);
+                    const dx = STATE.hand2.x - STATE.hand1.x;
+                    const dy = STATE.hand2.y - STATE.hand1.y;
+                    particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
                 } else {
                     STATE.pos.add(STATE.vel);
                     STATE.vel.multiplyScalar(CONFIG.spinFriction);
@@ -518,25 +627,8 @@
                 particles.scale.setScalar(1);
             }
 
-            // RENDER (Use Composer for Bloom)
             composer.render();
         }
-
-
-        // --- INPUT HANDLING ---
-        window.addEventListener('mousemove', e => {
-            STATE.mouse.x = (e.clientX/window.innerWidth)*2 - 1;
-            STATE.mouse.y = -(e.clientY/window.innerHeight)*2 + 1;
-            raycaster.setFromCamera(STATE.mouse, camera);
-            raycaster.ray.intersectPlane(drawPlane, STATE.mouseWorld);
-        });
-        window.addEventListener('mousedown', () => { if(CONFIG.appMode==='DRAW') STATE.isMouseDrawing=true; });
-        window.addEventListener('mouseup', () => STATE.isMouseDrawing=false);
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
 
 
         // --- MEDIAPIPE LOGIC ---
@@ -562,7 +654,7 @@
             if(CONFIG.appMode === 'DRAW') {
                 if(h1 && h1.isPinch) {
                     setAppMode('VIEW');
-                    AudioSys.playTone(600);
+                    window.AudioSys.playTone(600);
                     return;
                 }
                 if(h1 && h1.isGrab) {
@@ -577,7 +669,7 @@
             }
 
             // View Mode
-            if(count===2) { // Dual hand entropy
+            if(count===2) {
                  STATE.hand1.set(x1, y1, 0);
                  const dist = STATE.hand1.distanceTo(STATE.hand2);
                  STATE.entropy = (dist < 5) ? 0 : Math.min(1.0, (dist-5)/10);
@@ -605,7 +697,6 @@
             const isRingUp = lm[16].y < lm[14].y;
             const isPinkyUp = lm[20].y < lm[18].y;
             const pinchDist = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
-            
             const fingers = [isIndexUp, isMiddleUp, isRingUp, isPinkyUp].filter(Boolean).length;
             return { isGrab: fingers<=1, isPinch: pinchDist<0.05 && isMiddleUp, isOpen: fingers>=4 };
         }
@@ -614,8 +705,20 @@
             if(STATE.mode === m) return;
             STATE.mode = m;
             uiMode.innerText = m;
-            if(m==='GRAB') AudioSys.playTone(150, 'sawtooth');
-            if(m==='RESIZE') AudioSys.playTone(400, 'sine');
+            
+            const ru = {
+                'GRAB': 'КУЛАК (ТАЩИТЬ)',
+                'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)',
+                'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)',
+                'DUAL HANDS': 'ДВЕ РУКИ',
+                'IDLE': 'ОЖИДАНИЕ',
+                'DRAWING (FIST)': 'РИСУЕМ (КУЛАК)',
+                'CURSOR': 'КУРСОР'
+            };
+            uiMode.innerText = ru[m] || m;
+
+            if(m==='GRAB') window.AudioSys.playTone(150, 'sawtooth');
+            if(m==='RESIZE') window.AudioSys.playTone(400, 'sine');
         }
 
         const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}` });
