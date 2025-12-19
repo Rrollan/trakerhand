@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBER-HAND V71: FIXED MESH</title>
+    <title>Rollanmegacool</title>
     <style>
-        /* Блокируем скролл и зум для жестов */
         body { 
             margin: 0; overflow: hidden; background-color: #050505; 
             font-family: 'Segoe UI', monospace; color: white; 
@@ -81,7 +80,6 @@
         #ui-hint { position: absolute; top: 20px; right: 20px; color: rgba(255,255,255,0.3); font-size: 12px; display: none; pointer-events: none; z-index: 5; }
     </style>
 
-    <!-- ИМПОРТЫ БИБЛИОТЕК -->
     <script type="importmap">
         {
             "imports": {
@@ -89,10 +87,7 @@
                 "three/examples/jsm/loaders/OBJLoader.js": "https://unpkg.com/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
                 "three/examples/jsm/postprocessing/EffectComposer.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js",
                 "three/examples/jsm/postprocessing/RenderPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/RenderPass.js",
-                "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js",
-                "three/examples/jsm/postprocessing/ShaderPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/ShaderPass.js",
-                "three/examples/jsm/shaders/CopyShader.js": "https://unpkg.com/three@0.128.0/examples/jsm/shaders/CopyShader.js",
-                "three/examples/jsm/shaders/LuminosityHighPassShader.js": "https://unpkg.com/three@0.128.0/examples/jsm/shaders/LuminosityHighPassShader.js"
+                "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js"
             }
         }
     </script>
@@ -106,14 +101,14 @@
 
     <div id="start-screen">
         <button id="start-btn">INITIATE SYSTEM</button>
-        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM | OBJ | TEXTURE | MOBILE</div>
+        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM | OBJ | HOLOGRAPHY | MOBILE</div>
     </div>
 
     <div id="ui-hint">Настройки</div>
 
     <div id="ui-panel">
         <div class="header">
-            <h2>CYBER-HAND V71</h2>
+            <h2>CYBER-HAND V81</h2>
             <button onclick="document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block';" style="background:none; border:none; color:#0ff; cursor:pointer; font-size:16px;">✕</button>
         </div>
 
@@ -159,6 +154,9 @@
             </div>
 
             <div class="shape-grid">
+                <!-- НОВАЯ КНОПКА -->
+                <button class="shape-btn" data-shape="holo" style="grid-column: span 2; border: 1px dashed #00ffff; color:#00ffff;">👤 ГОЛОГРАММА (LIVE)</button>
+                
                 <button class="shape-btn active" data-shape="sphere">Сфера</button>
                 <button class="shape-btn" data-shape="galaxy">Галактика</button>
                 <button class="shape-btn" data-shape="dna">ДНК</button>
@@ -216,15 +214,20 @@
         document.getElementById('start-btn').addEventListener('click', () => window.AudioSys.init());
 
         // --- CONFIG ---
+        // Разрешение сетки для голограммы (128x96 ~ 12k частиц)
+        const GRID_W = 128;
+        const GRID_H = 96;
+        
         const CONFIG = {
-            count: 20000, // Увеличил количество частиц для лучшей детализации моделей
-            size: 0.05,
+            count: 20000, 
+            size: 0.06,
             shape: 'sphere',
             hue: 0.5,
             spinFriction: 0.95,
             appMode: 'VIEW',
             bloomStr: 1.5,
-            useTexture: false
+            useTexture: false,
+            isHolo: false
         };
 
         const STATE = {
@@ -278,7 +281,7 @@
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(CONFIG.count * 3);
         const colors = new Float32Array(CONFIG.count * 3);
-        const shapes = { sphere: [], galaxy: [], dna: [], cube: [], custom: [] };
+        const shapes = { sphere: [], galaxy: [], dna: [], cube: [], custom: [], holo: [] };
         const colorObj = new THREE.Color();
 
         for(let i=0; i<CONFIG.count; i++) {
@@ -303,7 +306,19 @@
             shapes.cube.push((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
             shapes.custom.push(9999,9999,9999);
 
-            // COLORS
+            // HOLO GRID (Для видео проекции)
+            // Создаем сетку только для первых N частиц
+            if (i < GRID_W * GRID_H) {
+                const gx = (i % GRID_W) / GRID_W;
+                const gy = Math.floor(i / GRID_W) / GRID_H;
+                // Центрируем и масштабируем сетку (10x7.5)
+                shapes.holo.push((gx - 0.5) * 12, -(gy - 0.5) * 9, 0);
+            } else {
+                // Лишние частицы прячем
+                shapes.holo.push(0, 0, 99999);
+            }
+
+            // Init Colors
             if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); 
             else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); 
             colors[i*3] = colorObj.r; colors[i*3+1] = colorObj.g; colors[i*3+2] = colorObj.b;
@@ -331,7 +346,7 @@
         );
         scene.add(cursor); cursor.visible = false;
 
-        // --- FIXED OBJ LOADER (RANDOM SAMPLING) ---
+        // --- OBJ LOADER (RANDOM SAMPLING) ---
         const objLoader = new OBJLoader();
         document.getElementById('obj-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -357,21 +372,15 @@
                     }
                 });
                 if(modelVertices.length === 0) { alert("Bad Model"); return; }
-                
-                // --- ИСПРАВЛЕНИЕ: RANDOM SAMPLING ---
-                // Вместо последовательного перебора, берем случайные точки
                 const totalVertices = modelVertices.length / 3;
-                
                 for(let i=0; i<CONFIG.count; i++) {
-                    // Генерируем случайный индекс вершины
                     const randIdx = Math.floor(Math.random() * totalVertices);
-                    
                     shapes.custom[i*3] = modelVertices[randIdx*3];
                     shapes.custom[i*3+1] = modelVertices[randIdx*3+1];
                     shapes.custom[i*3+2] = modelVertices[randIdx*3+2];
                 }
-
                 CONFIG.shape = 'custom';
+                CONFIG.isHolo = false;
                 CONFIG.useTexture = false;
                 CONFIG.appMode = 'VIEW';
                 document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
@@ -404,6 +413,7 @@
                             STATE.originalColors[i*3+2] = data[idx+2]/255;
                         }
                         CONFIG.useTexture = true;
+                        CONFIG.isHolo = false;
                         bloomPass.strength = 0.8; 
                         document.getElementById('bloom-slider').value = 0.8;
                         document.getElementById('val-bloom').innerText = 0.8;
@@ -414,6 +424,13 @@
                 reader.readAsDataURL(f);
             }
         });
+
+        // --- HOLOGRAM VIDEO HELPERS ---
+        const videoElement = document.getElementById('video-feed');
+        const hiddenCanvas = document.createElement('canvas');
+        hiddenCanvas.width = GRID_W;
+        hiddenCanvas.height = GRID_H;
+        const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
 
         // --- UI HANDLERS ---
         const raycaster = new THREE.Raycaster();
@@ -427,18 +444,9 @@
             window.AudioSys.playTone(300, 'triangle');
         };
 
-        document.getElementById('bloom-slider').oninput = (e) => { 
-            bloomPass.strength = parseFloat(e.target.value); 
-            document.getElementById('val-bloom').innerText = e.target.value; 
-        };
-        document.getElementById('size-slider').oninput = (e) => { 
-            CONFIG.size = parseFloat(e.target.value); material.size = CONFIG.size; 
-            document.getElementById('val-size').innerText = e.target.value; 
-        };
-        document.getElementById('fric-slider').oninput = (e) => { 
-            CONFIG.spinFriction = parseFloat(e.target.value); 
-            document.getElementById('val-fric').innerText = e.target.value; 
-        };
+        document.getElementById('bloom-slider').oninput = (e) => { bloomPass.strength = parseFloat(e.target.value); document.getElementById('val-bloom').innerText = e.target.value; };
+        document.getElementById('size-slider').oninput = (e) => { CONFIG.size = parseFloat(e.target.value); material.size = CONFIG.size; document.getElementById('val-size').innerText = e.target.value; };
+        document.getElementById('fric-slider').oninput = (e) => { CONFIG.spinFriction = parseFloat(e.target.value); document.getElementById('val-fric').innerText = e.target.value; };
         document.getElementById('color-input').addEventListener('input', e => {
             const c = new THREE.Color(e.target.value);
             const hsl = {}; c.getHSL(hsl);
@@ -454,7 +462,21 @@
             btn.onclick = () => {
                 document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
                 btn.classList.add('active');
-                CONFIG.shape = btn.dataset.shape;
+                
+                const s = btn.dataset.shape;
+                if (s === 'holo') {
+                    CONFIG.isHolo = true;
+                    CONFIG.shape = 'holo';
+                    STATE.rotVel = {x:0, y:0};
+                    particles.rotation.set(0,0,0);
+                    STATE.pos.set(0,0,0);
+                    STATE.vel.set(0,0,0);
+                    bloomPass.strength = 2.0; // Boost bloom for hologram
+                } else {
+                    CONFIG.isHolo = false;
+                    CONFIG.shape = s;
+                }
+                
                 setAppMode('VIEW');
                 window.AudioSys.playTone(600, 'sine');
             };
@@ -469,6 +491,7 @@
             
             if(mode === 'DRAW') {
                 CONFIG.shape = 'custom';
+                CONFIG.isHolo = false;
                 STATE.drawIndex = 0;
                 for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
                 STATE.pos.set(0,0,0); STATE.vel.set(0,0,0);
@@ -489,17 +512,12 @@
 
         window.addEventListener('touchstart', e => {
             if(e.target.closest('#ui-panel') || e.target.closest('#start-screen')) return;
-            if(CONFIG.appMode === 'DRAW') {
-                STATE.isMouseDrawing = true; 
-                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-            }
+            if(CONFIG.appMode === 'DRAW') { STATE.isMouseDrawing = true; updatePointer(e.touches[0].clientX, e.touches[0].clientY); }
         }, {passive: false});
 
         window.addEventListener('touchmove', e => {
             if(e.target.closest('#ui-panel')) return;
-            if(STATE.isMouseDrawing) {
-                updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-            }
+            if(STATE.isMouseDrawing) { updatePointer(e.touches[0].clientX, e.touches[0].clientY); }
         }, {passive: false});
         window.addEventListener('touchend', () => STATE.isMouseDrawing = false);
 
@@ -514,120 +532,165 @@
             requestAnimationFrame(animate);
 
             STATE.smoothHand.lerp(STATE.hand1, 0.2);
-            const targetShape = shapes[CONFIG.shape];
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
 
-            if(CONFIG.appMode === 'DRAW') {
-                cursor.visible = true;
-                let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
-                
-                if(STATE.isHandDrawing || STATE.activeHandId===1) cursor.position.copy(STATE.smoothHand);
-                else cursor.position.copy(STATE.mouseWorld);
+            // --- HOLOGRAPHIC MODE LOGIC ---
+            if (CONFIG.isHolo && videoElement.readyState === 4) {
+                hiddenCtx.drawImage(videoElement, 0, 0, GRID_W, GRID_H);
+                const frame = hiddenCtx.getImageData(0, 0, GRID_W, GRID_H).data;
+                const targetShape = shapes.holo;
 
-                if(inputPos) {
-                    cursor.material.color.setHex(0xff00ff);
-                    if(STATE.activeHandId) cursor.rotation.z += 0.2;
-                    
-                    const dist = inputPos.distanceTo(STATE.lastDrawPos);
-                    if(dist > 0.05 || STATE.drawIndex === 0) {
-                        const steps = Math.min(20, Math.ceil(dist/0.05));
-                        for(let s=0; s<=steps; s++) {
-                            if(STATE.drawIndex >= CONFIG.count) break;
-                            const t = s/steps;
-                            const v = new THREE.Vector3().lerpVectors(STATE.lastDrawPos, inputPos, t);
-                            const idx = STATE.drawIndex*3;
-                            shapes.custom[idx]=v.x; shapes.custom[idx+1]=v.y; shapes.custom[idx+2]=v.z;
-                            STATE.drawIndex++;
-                        }
-                        STATE.lastDrawPos.copy(inputPos);
+                for(let i=0; i<CONFIG.count; i++) {
+                    const ix = i * 3;
+                    if (i >= GRID_W * GRID_H) {
+                        // Hide extra particles
+                        posAttr.array[ix] = 0; posAttr.array[ix+1] = 0; posAttr.array[ix+2] = 99999;
+                        continue;
                     }
-                } else {
-                    cursor.material.color.setHex(0x00ffff);
-                    cursor.rotation.z = 0;
-                    if(STATE.activeHandId) STATE.lastDrawPos.copy(STATE.smoothHand);
-                    else STATE.lastDrawPos.copy(STATE.mouseWorld);
-                }
-            } else {
-                cursor.visible = false;
-            }
 
-            for(let i=0; i<CONFIG.count; i++) {
-                const ix = i*3;
-                let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
+                    // Map grid index to pixels (Flip X because webcam is mirrored)
+                    const row = Math.floor(i / GRID_W);
+                    const col = i % GRID_W;
+                    const pixelIdx = (row * GRID_W + (GRID_W - 1 - col)) * 4;
 
-                if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } 
+                    const r = frame[pixelIdx];
+                    const g = frame[pixelIdx+1];
+                    const b = frame[pixelIdx+2];
 
-                if(STATE.entropy > 0.01) {
-                    tx += STATE.scatterOffset[ix] * STATE.entropy;
-                    ty += STATE.scatterOffset[ix+1] * STATE.entropy;
-                    tz += STATE.scatterOffset[ix+2] * STATE.entropy;
-                }
+                    // Brightness to Depth mapping
+                    const brightness = (r + g + b) / 765.0; // 0..1
+                    const depth = brightness * 3.0; // Depth factor
 
-                posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.08;
-                posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
-                posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
+                    let tx = targetShape[ix];
+                    let ty = targetShape[ix+1];
+                    let tz = depth;
 
-                if(CONFIG.useTexture) {
-                    colAttr.array[ix] = STATE.originalColors[ix];
-                    colAttr.array[ix+1] = STATE.originalColors[ix+1];
-                    colAttr.array[ix+2] = STATE.originalColors[ix+2];
-                } else {
-                    if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) {
-                        colAttr.array[ix]=1; colAttr.array[ix+1]=1; colAttr.array[ix+2]=1;
-                    } else {
-                        let h = CONFIG.hue + (i/CONFIG.count)*0.1;
-                        colorObj.setHSL(h, 1.0, 0.6);
-                        colAttr.array[ix] = colorObj.r; colAttr.array[ix+1] = colorObj.g; colAttr.array[ix+2] = colorObj.b;
+                    // Hand Interaction (Push particles)
+                    const dx = tx - STATE.smoothHand.x;
+                    const dy = ty - STATE.smoothHand.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 2.0) {
+                        const force = (2.0 - dist) * 2.0;
+                        tz -= force; // Push back
                     }
-                }
-            }
-            posAttr.needsUpdate = true;
-            colAttr.needsUpdate = true;
 
-            if(CONFIG.appMode === 'VIEW') {
-                const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
+                    // Morphing
+                    posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.2;
+                    posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.2;
+                    posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.2;
 
-                if (STATE.mode === 'GRAB') {
-                    STATE.pos.lerp(activePos, 0.1);
-                    STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
-                } else if (STATE.mode === 'ROTATE') {
-                    const dX = activePos.x - STATE.prevHand.x;
-                    const dY = activePos.y - STATE.prevHand.y;
-                    STATE.rotVel.y += dX * 0.3;
-                    STATE.rotVel.x -= dY * 0.3;
-                } else if (STATE.mode === 'DUAL HANDS') {
-                    const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
-                    STATE.pos.lerp(mid, 0.1);
-                    const dx = STATE.hand2.x - STATE.hand1.x;
-                    const dy = STATE.hand2.y - STATE.hand1.y;
-                    particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
-                } else {
-                    STATE.pos.add(STATE.vel);
-                    STATE.vel.multiplyScalar(CONFIG.spinFriction);
-                    if(Math.abs(STATE.pos.x)>15) STATE.vel.x*=-1;
-                    if(Math.abs(STATE.pos.y)>10) STATE.vel.y*=-1;
-                    particles.rotation.y += 0.001;
+                    // Color mapping
+                    colAttr.array[ix] = r/255;
+                    colAttr.array[ix+1] = g/255;
+                    colAttr.array[ix+2] = b/255;
                 }
+                posAttr.needsUpdate = true;
+                colAttr.needsUpdate = true;
                 
-                particles.rotation.x += STATE.rotVel.x * 0.1;
-                particles.rotation.y += STATE.rotVel.y * 0.1;
-                STATE.rotVel.x *= CONFIG.spinFriction; STATE.rotVel.y *= CONFIG.spinFriction;
-
-                STATE.scale += (STATE.scale - STATE.scale) * 0.1; 
-                particles.scale.setScalar(STATE.scale);
-                particles.position.copy(STATE.pos);
-                STATE.prevHand.copy(activePos);
-            } else {
-                particles.position.set(0,0,0);
+                // Freeze scene movement
                 particles.rotation.set(0,0,0);
-                particles.scale.setScalar(1);
-            }
+                STATE.pos.set(0,0,0);
+            } 
+            // --- STANDARD MODE LOGIC ---
+            else {
+                const targetShape = shapes[CONFIG.shape];
+                
+                // Cursor Logic
+                if(CONFIG.appMode === 'DRAW') {
+                    cursor.visible = true;
+                    let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
+                    if(STATE.isHandDrawing || STATE.activeHandId===1) cursor.position.copy(STATE.smoothHand);
+                    else cursor.position.copy(STATE.mouseWorld);
 
+                    if(inputPos) {
+                        cursor.material.color.setHex(0xff00ff);
+                        const dist = inputPos.distanceTo(STATE.lastDrawPos);
+                        if(dist > 0.05 || STATE.drawIndex === 0) {
+                            const steps = Math.min(20, Math.ceil(dist/0.05));
+                            for(let s=0; s<=steps; s++) {
+                                if(STATE.drawIndex >= CONFIG.count) break;
+                                const t = s/steps;
+                                const v = new THREE.Vector3().lerpVectors(STATE.lastDrawPos, inputPos, t);
+                                const idx = STATE.drawIndex*3;
+                                shapes.custom[idx]=v.x; shapes.custom[idx+1]=v.y; shapes.custom[idx+2]=v.z;
+                                STATE.drawIndex++;
+                            }
+                            STATE.lastDrawPos.copy(inputPos);
+                        }
+                    } else { cursor.material.color.setHex(0x00ffff); }
+                } else { cursor.visible = false; }
+
+                for(let i=0; i<CONFIG.count; i++) {
+                    const ix = i*3;
+                    let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
+
+                    if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } 
+
+                    if(STATE.entropy > 0.01) {
+                        tx += STATE.scatterOffset[ix] * STATE.entropy;
+                        ty += STATE.scatterOffset[ix+1] * STATE.entropy;
+                        tz += STATE.scatterOffset[ix+2] * STATE.entropy;
+                    }
+
+                    posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.08;
+                    posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
+                    posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
+
+                    if(CONFIG.useTexture && !CONFIG.isHolo && (CONFIG.shape === 'sphere' || CONFIG.shape === 'custom')) { 
+                         // keep texture colors
+                         colAttr.array[ix] = STATE.originalColors[ix];
+                         colAttr.array[ix+1] = STATE.originalColors[ix+1];
+                         colAttr.array[ix+2] = STATE.originalColors[ix+2];
+                    } else {
+                        if(CONFIG.appMode === 'DRAW' && i < STATE.drawIndex) {
+                            colAttr.array[ix]=1; colAttr.array[ix+1]=1; colAttr.array[ix+2]=1;
+                        } else {
+                            let h = CONFIG.hue + (i/CONFIG.count)*0.1;
+                            colorObj.setHSL(h, 1.0, 0.6);
+                            colAttr.array[ix] = colorObj.r; colAttr.array[ix+1] = colorObj.g; colAttr.array[ix+2] = colorObj.b;
+                        }
+                    }
+                }
+                posAttr.needsUpdate = true;
+                colAttr.needsUpdate = true;
+
+                if(CONFIG.appMode === 'VIEW') {
+                    const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
+                    if (STATE.mode === 'GRAB') {
+                        STATE.pos.lerp(activePos, 0.1);
+                        STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
+                    } else if (STATE.mode === 'ROTATE') {
+                        const dX = activePos.x - STATE.prevHand.x;
+                        const dY = activePos.y - STATE.prevHand.y;
+                        STATE.rotVel.y += dX * 0.3;
+                        STATE.rotVel.x -= dY * 0.3;
+                    } else if (STATE.mode === 'DUAL HANDS') {
+                        const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
+                        STATE.pos.lerp(mid, 0.1);
+                        const dx = STATE.hand2.x - STATE.hand1.x;
+                        const dy = STATE.hand2.y - STATE.hand1.y;
+                        particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
+                    } else {
+                        STATE.pos.add(STATE.vel);
+                        STATE.vel.multiplyScalar(CONFIG.spinFriction);
+                        if(Math.abs(STATE.pos.x)>15) STATE.vel.x*=-1;
+                        if(Math.abs(STATE.pos.y)>10) STATE.vel.y*=-1;
+                        particles.rotation.y += 0.001;
+                    }
+                    particles.rotation.x += STATE.rotVel.x * 0.1;
+                    particles.rotation.y += STATE.rotVel.y * 0.1;
+                    STATE.rotVel.x *= CONFIG.spinFriction; STATE.rotVel.y *= CONFIG.spinFriction;
+                    STATE.scale += (STATE.scale - STATE.scale) * 0.1; 
+                    particles.scale.setScalar(STATE.scale);
+                    particles.position.copy(STATE.pos);
+                    STATE.prevHand.copy(activePos);
+                }
+            }
             composer.render();
         }
 
-        // --- MEDIAPIPE LOGIC ---
+        // --- MEDIAPIPE ---
         const uiMode = document.getElementById('mode-disp');
         const loader = document.getElementById('loader');
 
@@ -647,20 +710,18 @@
                 STATE.hand2.set(x2,y2,0);
             }
 
+            if(CONFIG.isHolo) {
+                if(count>0) {
+                     STATE.activeHandId = 1; STATE.hand1.set(x1,y1,0); STATE.smoothHand.lerp(STATE.hand1, 0.2);
+                     updateMode('HOLO INTERACT');
+                } else { updateMode('HOLO VIEW'); }
+                return;
+            }
+
             if(CONFIG.appMode === 'DRAW') {
-                if(h1 && h1.isPinch) {
-                    setAppMode('VIEW');
-                    window.AudioSys.playTone(600);
-                    return;
-                }
-                if(h1 && h1.isGrab) {
-                    STATE.activeHandId = 1; STATE.hand1.set(x1,y1,0); STATE.isHandDrawing=true;
-                    updateMode('DRAWING (FIST)');
-                } else {
-                    STATE.isHandDrawing=false;
-                    if(h1) { STATE.hand1.set(x1,y1,0); STATE.activeHandId=1; }
-                    updateMode('CURSOR');
-                }
+                if(h1 && h1.isPinch) { setAppMode('VIEW'); window.AudioSys.playTone(600); return; }
+                if(h1 && h1.isGrab) { STATE.activeHandId = 1; STATE.hand1.set(x1,y1,0); STATE.isHandDrawing=true; updateMode('DRAWING (FIST)'); } 
+                else { STATE.isHandDrawing=false; if(h1) { STATE.hand1.set(x1,y1,0); STATE.activeHandId=1; } updateMode('CURSOR'); }
                 return;
             }
 
@@ -678,8 +739,7 @@
                 if(h1.isPinch) {
                     if(STATE.mode!=='RESIZE') { STATE.resizeBaseY=y1; STATE.resizeBaseS=STATE.scale; }
                     STATE.scale = Math.max(0.3, Math.min(3.0, STATE.resizeBaseS + (y1-STATE.resizeBaseY)*0.3));
-                    updateMode('RESIZE');
-                    return;
+                    updateMode('RESIZE'); return;
                 }
                 if(h1.isOpen) { updateMode('ROTATE'); return; }
             }
@@ -700,7 +760,7 @@
             if(STATE.mode === m) return;
             STATE.mode = m;
             uiMode.innerText = m;
-            const ru = { 'GRAB': 'КУЛАК (ТАЩИТЬ)', 'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)', 'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)', 'DUAL HANDS': 'ДВЕ РУКИ', 'IDLE': 'ОЖИДАНИЕ', 'DRAWING (FIST)': 'РИСУЕМ (КУЛАК)', 'CURSOR': 'КУРСОР' };
+            const ru = { 'GRAB': 'КУЛАК (ТАЩИТЬ)', 'ROTATE': 'ЛАДОНЬ (ВРАЩЕНИЕ)', 'RESIZE': 'ЖЕСТ ОК (РАЗМЕР)', 'DUAL HANDS': 'ДВЕ РУКИ', 'IDLE': 'ОЖИДАНИЕ', 'DRAWING (FIST)': 'РИСУЕМ (КУЛАК)', 'CURSOR': 'КУРСОР', 'HOLO VIEW': 'ГОЛОГРАММА', 'HOLO INTERACT': 'ВЗАИМОДЕЙСТВИЕ' };
             uiMode.innerText = ru[m] || m;
             if(m==='GRAB') window.AudioSys.playTone(150, 'sawtooth');
             if(m==='RESIZE') window.AudioSys.playTone(400, 'sine');
