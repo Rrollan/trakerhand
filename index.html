@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBER-HAND V90: DEBUG PROTOCOL</title>
+    <title>CYBER-HAND V91: DEBUG STABLE</title>
     <style>
         body { 
             margin: 0; overflow: hidden; background-color: #050505; 
@@ -108,7 +108,7 @@
 
     <div id="ui-panel">
         <div class="header">
-            <h2>CYBER-HAND V90</h2>
+            <h2>CYBER-HAND V91</h2>
             <button onclick="document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block';" style="background:none; border:none; color:#0ff; cursor:pointer; font-size:16px;">✕</button>
         </div>
 
@@ -118,8 +118,8 @@
         </div>
 
         <div id="view-controls">
-            <!-- КНОПКА ОТЛАДКИ -->
-            <button class="file-upload" onclick="toggleDebugWindow()" style="border-color: #0f0; color: #0f0; margin-bottom: 15px; font-weight:bold;">
+            <!-- КНОПКА ОТЛАДКИ (ВАЖНО) -->
+            <button class="file-upload" onclick="window.toggleDebugWindow()" style="border-color: #0f0; color: #0f0; margin-bottom: 15px; font-weight:bold;">
                 📟 ОТКРЫТЬ ОКНО ОТЛАДКИ
             </button>
 
@@ -151,6 +151,11 @@
             <div class="control-row">
                 <div class="label"><span>Размер частиц</span><span id="val-size">0.06</span></div>
                 <input type="range" id="size-slider" min="0.01" max="0.2" step="0.01" value="0.06">
+            </div>
+
+            <div class="control-row">
+                <div class="label"><span>Инерция</span><span id="val-fric">0.95</span></div>
+                <input type="range" id="fric-slider" min="0.80" max="0.99" step="0.01" value="0.95">
             </div>
 
             <div class="shape-grid">
@@ -209,8 +214,6 @@
             }
         };
 
-        document.getElementById('start-btn').addEventListener('click', () => window.AudioSys.init());
-
         // --- DEBUG WINDOW SYSTEM ---
         let debugWin = null;
         let debugCtx = null;
@@ -225,7 +228,7 @@
 
             debugWin = window.open('', 'CyberHandDebug', 'width=640,height=480,menubar=no,toolbar=no');
             if (!debugWin) {
-                alert("Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.");
+                alert("Браузер заблокировал всплывающее окно. Разрешите их для этого сайта.");
                 return;
             }
 
@@ -235,19 +238,18 @@
                     <title>DEBUG VIEW - SKELETON TRACKING</title>
                     <style>
                         body { background: #111; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-                        canvas { border: 2px solid #0f0; box-shadow: 0 0 20px #0f0; transform: scaleX(-1); }
+                        canvas { border: 2px solid #0f0; box-shadow: 0 0 20px #0f0; transform: scaleX(-1); max-width: 100%; }
                         .info { position: absolute; top: 10px; left: 10px; color: #0f0; font-family: monospace; z-index: 10; font-size: 12px; pointer-events: none;}
                     </style>
                 </head>
                 <body>
-                    <div class="info">TRACKING ACTIVE...<br>FPS: <span id="fps">--</span></div>
+                    <div class="info">TRACKING ACTIVE...</div>
                     <canvas id="debug-cvs" width="640" height="480"></canvas>
                 </body>
                 </html>
             `);
             debugWin.document.close();
             
-            // Wait for window to load
             setTimeout(() => {
                 if(debugWin && !debugWin.closed) {
                     debugCanvas = debugWin.document.getElementById('debug-cvs');
@@ -271,20 +273,14 @@
                 ctx.stroke();
             };
 
-            // Thumb
-            connect(0, 1); connect(1, 2); connect(2, 3); connect(3, 4);
-            // Index
-            connect(0, 5); connect(5, 6); connect(6, 7); connect(7, 8);
-            // Middle
-            connect(0, 9); connect(9, 10); connect(10, 11); connect(11, 12);
-            // Ring
-            connect(0, 13); connect(13, 14); connect(14, 15); connect(15, 16);
-            // Pinky
-            connect(0, 17); connect(17, 18); connect(18, 19); connect(19, 20);
-            // Palm
-            connect(5, 9); connect(9, 13); connect(13, 17);
+            // Fingers
+            connect(0,1); connect(1,2); connect(2,3); connect(3,4);
+            connect(0,5); connect(5,6); connect(6,7); connect(7,8);
+            connect(0,9); connect(9,10); connect(10,11); connect(11,12);
+            connect(0,13); connect(13,14); connect(14,15); connect(15,16);
+            connect(0,17); connect(17,18); connect(18,19); connect(19,20);
+            connect(5,9); connect(9,13); connect(13,17);
 
-            // Joints
             for(let lm of landmarks) {
                 ctx.beginPath();
                 ctx.arc(lm.x * ctx.canvas.width, lm.y * ctx.canvas.height, 4, 0, 2*Math.PI);
@@ -292,7 +288,7 @@
             }
         }
 
-        // --- CONFIG ---
+        // --- CONFIG & STATE ---
         const GRID_W = 128;
         const GRID_H = 96;
         
@@ -333,7 +329,6 @@
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // --- POST PROCESSING ---
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.strength = CONFIG.bloomStr;
@@ -363,16 +358,14 @@
         const colorObj = new THREE.Color();
 
         for(let i=0; i<CONFIG.count; i++) {
-            // SPHERE
+            // SHAPE GEN
             const phi = Math.acos(-1 + (2*i)/CONFIG.count);
             const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
             shapes.sphere.push(3*Math.cos(theta)*Math.sin(phi), 3*Math.sin(theta)*Math.sin(phi), 3*Math.cos(phi));
             
-            // GALAXY
             const ang = i*0.05; const r = (i/CONFIG.count)*8;
             shapes.galaxy.push(r*Math.cos(ang), (Math.random()-0.5)*1 + Math.sin(r)*0.5, r*Math.sin(ang));
 
-            // DNA
             const t = i * 0.1;
             const radius = 2;
             const x = Math.cos(t) * radius;
@@ -380,18 +373,14 @@
             const z = Math.sin(t) * radius;
             if (i % 2 === 0) shapes.dna.push(x, y, z); else shapes.dna.push(-x, y, -z);
 
-            // CUBE
             shapes.cube.push((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
             shapes.custom.push(9999,9999,9999);
 
-            // HOLO GRID
             if (i < GRID_W * GRID_H) {
                 const gx = (i % GRID_W) / GRID_W;
                 const gy = Math.floor(i / GRID_W) / GRID_H;
                 shapes.holo.push((gx - 0.5) * 12, -(gy - 0.5) * 9, 0);
-            } else {
-                shapes.holo.push(0, 0, 99999);
-            }
+            } else { shapes.holo.push(0, 0, 99999); }
 
             if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); 
             else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); 
@@ -420,139 +409,144 @@
         );
         scene.add(cursor); cursor.visible = false;
 
-        // --- OBJ LOADER ---
+        // --- ASSET LOADERS ---
         const objLoader = new OBJLoader();
-        document.getElementById('obj-input').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                const contents = ev.target.result;
-                const object = objLoader.parse(contents);
-                let modelVertices = [];
-                object.traverse((child) => {
-                    if (child.isMesh) {
-                        const pos = child.geometry.attributes.position;
-                        child.geometry.computeBoundingSphere();
-                        const center = child.geometry.boundingSphere.center;
-                        const radius = child.geometry.boundingSphere.radius;
-                        const scale = 6.0 / radius;
-                        for(let k=0; k < pos.count; k++) {
-                            const vx = (pos.getX(k) - center.x) * scale;
-                            const vy = (pos.getY(k) - center.y) * scale;
-                            const vz = (pos.getZ(k) - center.z) * scale;
-                            modelVertices.push(vx, vy, vz);
-                        }
-                    }
-                });
-                if(modelVertices.length === 0) { alert("Bad Model"); return; }
-                const totalVertices = modelVertices.length / 3;
-                for(let i=0; i<CONFIG.count; i++) {
-                    const randIdx = Math.floor(Math.random() * totalVertices);
-                    shapes.custom[i*3] = modelVertices[randIdx*3];
-                    shapes.custom[i*3+1] = modelVertices[randIdx*3+1];
-                    shapes.custom[i*3+2] = modelVertices[randIdx*3+2];
-                }
-                CONFIG.shape = 'custom';
-                CONFIG.isHolo = false;
-                CONFIG.useTexture = false;
-                CONFIG.appMode = 'VIEW';
-                document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
-                window.AudioSys.playTone(400, 'square');
-            };
-            reader.readAsText(file);
-        });
-
-        // --- TEXTURE LOADER ---
-        const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
-        document.getElementById('tex-input').addEventListener('change', e => {
-            const f = e.target.files[0];
-            if(f) {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    const img = new Image();
-                    img.onload = () => {
-                        mapCanvas.width = img.width; mapCanvas.height = img.height;
-                        mapCtx.drawImage(img,0,0);
-                        const data = mapCtx.getImageData(0,0,img.width,img.height).data;
-                        for(let i=0; i<CONFIG.count; i++) {
-                            const phi = Math.acos(-1 + (2*i)/CONFIG.count);
-                            const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
-                            let u = (theta % (2*Math.PI))/(2*Math.PI);
-                            let v = phi / Math.PI;
-                            const px = Math.floor(u*img.width); const py = Math.floor(v*img.height);
-                            const idx = (py*img.width+px)*4;
-                            STATE.originalColors[i*3] = data[idx]/255;
-                            STATE.originalColors[i*3+1] = data[idx+1]/255;
-                            STATE.originalColors[i*3+2] = data[idx+2]/255;
-                        }
-                        CONFIG.useTexture = true;
-                        CONFIG.isHolo = false;
-                        bloomPass.strength = 0.8; 
-                        document.getElementById('bloom-slider').value = 0.8;
-                        document.getElementById('val-bloom').innerText = 0.8;
-                        window.AudioSys.playTone(500, 'sine');
-                    };
-                    img.src = ev.target.result;
-                };
-                reader.readAsDataURL(f);
-            }
-        });
-
         const videoElement = document.getElementById('video-feed');
         const hiddenCanvas = document.createElement('canvas');
         hiddenCanvas.width = GRID_W;
         hiddenCanvas.height = GRID_H;
         const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+        
+        const mapCanvas = document.createElement('canvas'); const mapCtx = mapCanvas.getContext('2d');
 
+        // --- BINDINGS (WRAPPED IN LOAD) ---
+        window.addEventListener('load', () => {
+            document.getElementById('start-btn').addEventListener('click', () => window.AudioSys.init());
+
+            document.getElementById('obj-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const contents = ev.target.result;
+                    const object = objLoader.parse(contents);
+                    let modelVertices = [];
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            const pos = child.geometry.attributes.position;
+                            child.geometry.computeBoundingSphere();
+                            const center = child.geometry.boundingSphere.center;
+                            const radius = child.geometry.boundingSphere.radius;
+                            const scale = 6.0 / radius;
+                            for(let k=0; k < pos.count; k++) {
+                                modelVertices.push(
+                                    (pos.getX(k) - center.x) * scale,
+                                    (pos.getY(k) - center.y) * scale,
+                                    (pos.getZ(k) - center.z) * scale
+                                );
+                            }
+                        }
+                    });
+                    if(modelVertices.length === 0) return;
+                    const totalVertices = modelVertices.length / 3;
+                    for(let i=0; i<CONFIG.count; i++) {
+                        const randIdx = Math.floor(Math.random() * totalVertices);
+                        shapes.custom[i*3] = modelVertices[randIdx*3];
+                        shapes.custom[i*3+1] = modelVertices[randIdx*3+1];
+                        shapes.custom[i*3+2] = modelVertices[randIdx*3+2];
+                    }
+                    CONFIG.shape = 'custom';
+                    CONFIG.isHolo = false;
+                    CONFIG.useTexture = false;
+                    setAppMode('VIEW');
+                    document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+                };
+                reader.readAsText(file);
+            });
+
+            document.getElementById('tex-input').addEventListener('change', e => {
+                const f = e.target.files[0];
+                if(f) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        const img = new Image();
+                        img.onload = () => {
+                            mapCanvas.width = img.width; mapCanvas.height = img.height;
+                            mapCtx.drawImage(img,0,0);
+                            const data = mapCtx.getImageData(0,0,img.width,img.height).data;
+                            for(let i=0; i<CONFIG.count; i++) {
+                                const phi = Math.acos(-1 + (2*i)/CONFIG.count);
+                                const theta = Math.sqrt(CONFIG.count * Math.PI) * phi;
+                                let u = (theta % (2*Math.PI))/(2*Math.PI);
+                                let v = phi / Math.PI;
+                                const px = Math.floor(u*img.width); const py = Math.floor(v*img.height);
+                                const idx = (py*img.width+px)*4;
+                                STATE.originalColors[i*3] = data[idx]/255;
+                                STATE.originalColors[i*3+1] = data[idx+1]/255;
+                                STATE.originalColors[i*3+2] = data[idx+2]/255;
+                            }
+                            CONFIG.useTexture = true;
+                            CONFIG.isHolo = false;
+                            bloomPass.strength = 0.8; 
+                            document.getElementById('bloom-slider').value = 0.8;
+                            document.getElementById('val-bloom').innerText = 0.8;
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(f);
+                }
+            });
+
+            document.getElementById('bg-input').addEventListener('change', e => {
+                const f = e.target.files[0];
+                if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
+            });
+
+            document.getElementById('btn-view').onclick = () => setAppMode('VIEW');
+            document.getElementById('btn-draw').onclick = () => setAppMode('DRAW');
+            document.getElementById('clear-btn').onclick = () => {
+                STATE.drawIndex = 0;
+                for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
+                window.AudioSys.playTone(300, 'triangle');
+            };
+
+            const bloomS = document.getElementById('bloom-slider');
+            if(bloomS) bloomS.oninput = (e) => { bloomPass.strength = parseFloat(e.target.value); document.getElementById('val-bloom').innerText = e.target.value; };
+            
+            const sizeS = document.getElementById('size-slider');
+            if(sizeS) sizeS.oninput = (e) => { CONFIG.size = parseFloat(e.target.value); material.size = CONFIG.size; document.getElementById('val-size').innerText = e.target.value; };
+            
+            const fricS = document.getElementById('fric-slider');
+            if(fricS) fricS.oninput = (e) => { CONFIG.spinFriction = parseFloat(e.target.value); document.getElementById('val-fric').innerText = e.target.value; };
+            
+            document.getElementById('color-input').addEventListener('input', e => {
+                const c = new THREE.Color(e.target.value);
+                const hsl = {}; c.getHSL(hsl);
+                CONFIG.hue = hsl.h;
+                CONFIG.useTexture = false;
+            });
+
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const s = btn.dataset.shape;
+                    if (s === 'holo') {
+                        CONFIG.isHolo = true; CONFIG.shape = 'holo';
+                        STATE.rotVel = {x:0, y:0}; particles.rotation.set(0,0,0); STATE.pos.set(0,0,0); STATE.vel.set(0,0,0);
+                        bloomPass.strength = 2.0; 
+                    } else {
+                        CONFIG.isHolo = false; CONFIG.shape = s;
+                    }
+                    setAppMode('VIEW');
+                    window.AudioSys.playTone(600, 'sine');
+                };
+            });
+        });
+
+        // --- CORE FUNCTIONS ---
         const raycaster = new THREE.Raycaster();
         const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-
-        document.getElementById('btn-view').onclick = () => setAppMode('VIEW');
-        document.getElementById('btn-draw').onclick = () => setAppMode('DRAW');
-        document.getElementById('clear-btn').onclick = () => {
-            STATE.drawIndex = 0;
-            for(let i=0; i<CONFIG.count*3; i++) shapes.custom[i] = 99999;
-            window.AudioSys.playTone(300, 'triangle');
-        };
-
-        document.getElementById('bloom-slider').oninput = (e) => { bloomPass.strength = parseFloat(e.target.value); document.getElementById('val-bloom').innerText = e.target.value; };
-        document.getElementById('size-slider').oninput = (e) => { CONFIG.size = parseFloat(e.target.value); material.size = CONFIG.size; document.getElementById('val-size').innerText = e.target.value; };
-        document.getElementById('fric-slider').oninput = (e) => { CONFIG.spinFriction = parseFloat(e.target.value); document.getElementById('val-fric').innerText = e.target.value; };
-        document.getElementById('color-input').addEventListener('input', e => {
-            const c = new THREE.Color(e.target.value);
-            const hsl = {}; c.getHSL(hsl);
-            CONFIG.hue = hsl.h;
-            CONFIG.useTexture = false;
-        });
-        document.getElementById('bg-input').addEventListener('change', e => {
-            const f = e.target.files[0];
-            if(f) { const r = new FileReader(); r.onload=ev=>document.getElementById('bg-layer').style.backgroundImage=`url(${ev.target.result})`; r.readAsDataURL(f); }
-        });
-
-        document.querySelectorAll('.shape-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                const s = btn.dataset.shape;
-                if (s === 'holo') {
-                    CONFIG.isHolo = true;
-                    CONFIG.shape = 'holo';
-                    STATE.rotVel = {x:0, y:0};
-                    particles.rotation.set(0,0,0);
-                    STATE.pos.set(0,0,0);
-                    STATE.vel.set(0,0,0);
-                    bloomPass.strength = 2.0; 
-                } else {
-                    CONFIG.isHolo = false;
-                    CONFIG.shape = s;
-                }
-                
-                setAppMode('VIEW');
-                window.AudioSys.playTone(600, 'sine');
-            };
-        });
 
         function setAppMode(mode) {
             CONFIG.appMode = mode;
@@ -580,12 +574,10 @@
         window.addEventListener('mousemove', e => updatePointer(e.clientX, e.clientY));
         window.addEventListener('mousedown', () => { if(CONFIG.appMode==='DRAW') STATE.isMouseDrawing=true; });
         window.addEventListener('mouseup', () => STATE.isMouseDrawing=false);
-
         window.addEventListener('touchstart', e => {
             if(e.target.closest('#ui-panel') || e.target.closest('#start-screen')) return;
             if(CONFIG.appMode === 'DRAW') { STATE.isMouseDrawing = true; updatePointer(e.touches[0].clientX, e.touches[0].clientY); }
         }, {passive: false});
-
         window.addEventListener('touchmove', e => {
             if(e.target.closest('#ui-panel')) return;
             if(STATE.isMouseDrawing) { updatePointer(e.touches[0].clientX, e.touches[0].clientY); }
@@ -598,7 +590,6 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
 
@@ -651,7 +642,6 @@
                 }
                 posAttr.needsUpdate = true;
                 colAttr.needsUpdate = true;
-                
                 particles.rotation.set(0,0,0);
                 STATE.pos.set(0,0,0);
             } 
@@ -685,15 +675,12 @@
                 for(let i=0; i<CONFIG.count; i++) {
                     const ix = i*3;
                     let tx = targetShape[ix]; let ty = targetShape[ix+1]; let tz = targetShape[ix+2];
-
                     if(STATE.mode === 'GRAB') { tx*=0.8; ty*=0.8; tz*=0.8; } 
-
                     if(STATE.entropy > 0.01) {
                         tx += STATE.scatterOffset[ix] * STATE.entropy;
                         ty += STATE.scatterOffset[ix+1] * STATE.entropy;
                         tz += STATE.scatterOffset[ix+2] * STATE.entropy;
                     }
-
                     posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.08;
                     posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.08;
                     posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
@@ -718,24 +705,19 @@
                 if(CONFIG.appMode === 'VIEW') {
                     const activePos = (STATE.activeHandId === 2) ? STATE.hand2 : STATE.smoothHand;
                     if (STATE.mode === 'GRAB') {
-                        STATE.pos.lerp(activePos, 0.1);
-                        STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
+                        STATE.pos.lerp(activePos, 0.1); STATE.rotVel.x *= 0.9; STATE.rotVel.y *= 0.9;
                     } else if (STATE.mode === 'ROTATE') {
                         const dX = activePos.x - STATE.prevHand.x;
                         const dY = activePos.y - STATE.prevHand.y;
-                        STATE.rotVel.y += dX * 0.3;
-                        STATE.rotVel.x -= dY * 0.3;
+                        STATE.rotVel.y += dX * 0.3; STATE.rotVel.x -= dY * 0.3;
                     } else if (STATE.mode === 'DUAL HANDS') {
                         const mid = new THREE.Vector3().addVectors(STATE.hand1, STATE.hand2).multiplyScalar(0.5);
                         STATE.pos.lerp(mid, 0.1);
-                        const dx = STATE.hand2.x - STATE.hand1.x;
-                        const dy = STATE.hand2.y - STATE.hand1.y;
+                        const dx = STATE.hand2.x - STATE.hand1.x; const dy = STATE.hand2.y - STATE.hand1.y;
                         particles.rotation.z += (Math.atan2(dy, dx) - particles.rotation.z) * 0.1;
                     } else {
-                        STATE.pos.add(STATE.vel);
-                        STATE.vel.multiplyScalar(CONFIG.spinFriction);
-                        if(Math.abs(STATE.pos.x)>15) STATE.vel.x*=-1;
-                        if(Math.abs(STATE.pos.y)>10) STATE.vel.y*=-1;
+                        STATE.pos.add(STATE.vel); STATE.vel.multiplyScalar(CONFIG.spinFriction);
+                        if(Math.abs(STATE.pos.x)>15) STATE.vel.x*=-1; if(Math.abs(STATE.pos.y)>10) STATE.vel.y*=-1;
                         particles.rotation.y += 0.001;
                     }
                     particles.rotation.x += STATE.rotVel.x * 0.1;
@@ -756,11 +738,8 @@
         function onResults(results) {
             if(loader) loader.style.display = 'none';
 
-            // --- DEBUG WINDOW RENDER ---
             if(debugWin && !debugWin.closed && debugCtx && results.image) {
-                // Clear and Draw Video
                 debugCtx.drawImage(results.image, 0, 0, 640, 480);
-                // Draw Skeletons
                 if (results.multiHandLandmarks) {
                     for (const landmarks of results.multiHandLandmarks) {
                         drawSkeleton(landmarks, debugCtx);
