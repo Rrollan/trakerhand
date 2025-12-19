@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rollanmegacool</title>
+    <title>CYBER-HAND V90: DEBUG PROTOCOL</title>
     <style>
         body { 
             margin: 0; overflow: hidden; background-color: #050505; 
@@ -101,14 +101,14 @@
 
     <div id="start-screen">
         <button id="start-btn">INITIATE SYSTEM</button>
-        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM | OBJ | HOLOGRAPHY | MOBILE</div>
+        <div style="margin-top:20px; color:#555; font-size:11px;">BLOOM | OBJ | DEBUGGER | HOLOGRAPHY</div>
     </div>
 
     <div id="ui-hint">Настройки</div>
 
     <div id="ui-panel">
         <div class="header">
-            <h2>CYBER-HAND V81</h2>
+            <h2>CYBER-HAND V90</h2>
             <button onclick="document.getElementById('ui-panel').style.transform = 'translateX(120%)'; document.getElementById('ui-hint').style.display='block';" style="background:none; border:none; color:#0ff; cursor:pointer; font-size:16px;">✕</button>
         </div>
 
@@ -118,6 +118,11 @@
         </div>
 
         <div id="view-controls">
+            <!-- КНОПКА ОТЛАДКИ -->
+            <button class="file-upload" onclick="toggleDebugWindow()" style="border-color: #0f0; color: #0f0; margin-bottom: 15px; font-weight:bold;">
+                📟 ОТКРЫТЬ ОКНО ОТЛАДКИ
+            </button>
+
             <label class="file-upload">
                 📥 ЗАГРУЗИТЬ 3D МОДЕЛЬ (.OBJ)
                 <input type="file" id="obj-input" accept=".obj">
@@ -148,15 +153,8 @@
                 <input type="range" id="size-slider" min="0.01" max="0.2" step="0.01" value="0.06">
             </div>
 
-            <div class="control-row">
-                <div class="label"><span>Инерция</span><span id="val-fric">0.95</span></div>
-                <input type="range" id="fric-slider" min="0.80" max="0.99" step="0.01" value="0.95">
-            </div>
-
             <div class="shape-grid">
-                <!-- НОВАЯ КНОПКА -->
-                <button class="shape-btn" data-shape="holo" style="grid-column: span 2; border: 1px dashed #00ffff; color:#00ffff;">👤 ГОЛОГРАММА (LIVE)</button>
-                
+                <button class="shape-btn" data-shape="holo" style="grid-column: span 2; border: 1px dashed #00ffff; color:#00ffff;">👤 ГОЛОГРАММА</button>
                 <button class="shape-btn active" data-shape="sphere">Сфера</button>
                 <button class="shape-btn" data-shape="galaxy">Галактика</button>
                 <button class="shape-btn" data-shape="dna">ДНК</button>
@@ -213,8 +211,88 @@
 
         document.getElementById('start-btn').addEventListener('click', () => window.AudioSys.init());
 
+        // --- DEBUG WINDOW SYSTEM ---
+        let debugWin = null;
+        let debugCtx = null;
+        let debugCanvas = null;
+
+        window.toggleDebugWindow = function() {
+            if (debugWin && !debugWin.closed) {
+                debugWin.close();
+                debugWin = null;
+                return;
+            }
+
+            debugWin = window.open('', 'CyberHandDebug', 'width=640,height=480,menubar=no,toolbar=no');
+            if (!debugWin) {
+                alert("Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.");
+                return;
+            }
+
+            debugWin.document.write(`
+                <html>
+                <head>
+                    <title>DEBUG VIEW - SKELETON TRACKING</title>
+                    <style>
+                        body { background: #111; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+                        canvas { border: 2px solid #0f0; box-shadow: 0 0 20px #0f0; transform: scaleX(-1); }
+                        .info { position: absolute; top: 10px; left: 10px; color: #0f0; font-family: monospace; z-index: 10; font-size: 12px; pointer-events: none;}
+                    </style>
+                </head>
+                <body>
+                    <div class="info">TRACKING ACTIVE...<br>FPS: <span id="fps">--</span></div>
+                    <canvas id="debug-cvs" width="640" height="480"></canvas>
+                </body>
+                </html>
+            `);
+            debugWin.document.close();
+            
+            // Wait for window to load
+            setTimeout(() => {
+                if(debugWin && !debugWin.closed) {
+                    debugCanvas = debugWin.document.getElementById('debug-cvs');
+                    debugCtx = debugCanvas.getContext('2d');
+                }
+            }, 500);
+        };
+
+        function drawSkeleton(landmarks, ctx) {
+            if(!ctx) return;
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#00ff00';
+            ctx.fillStyle = '#ff0000';
+
+            const connect = (a, b) => {
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.beginPath();
+                ctx.moveTo(landmarks[a].x * w, landmarks[a].y * h);
+                ctx.lineTo(landmarks[b].x * w, landmarks[b].y * h);
+                ctx.stroke();
+            };
+
+            // Thumb
+            connect(0, 1); connect(1, 2); connect(2, 3); connect(3, 4);
+            // Index
+            connect(0, 5); connect(5, 6); connect(6, 7); connect(7, 8);
+            // Middle
+            connect(0, 9); connect(9, 10); connect(10, 11); connect(11, 12);
+            // Ring
+            connect(0, 13); connect(13, 14); connect(14, 15); connect(15, 16);
+            // Pinky
+            connect(0, 17); connect(17, 18); connect(18, 19); connect(19, 20);
+            // Palm
+            connect(5, 9); connect(9, 13); connect(13, 17);
+
+            // Joints
+            for(let lm of landmarks) {
+                ctx.beginPath();
+                ctx.arc(lm.x * ctx.canvas.width, lm.y * ctx.canvas.height, 4, 0, 2*Math.PI);
+                ctx.fill();
+            }
+        }
+
         // --- CONFIG ---
-        // Разрешение сетки для голограммы (128x96 ~ 12k частиц)
         const GRID_W = 128;
         const GRID_H = 96;
         
@@ -255,7 +333,7 @@
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // --- POST PROCESSING (BLOOM) ---
+        // --- POST PROCESSING ---
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.strength = CONFIG.bloomStr;
@@ -306,19 +384,15 @@
             shapes.cube.push((Math.random()-0.5)*5, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
             shapes.custom.push(9999,9999,9999);
 
-            // HOLO GRID (Для видео проекции)
-            // Создаем сетку только для первых N частиц
+            // HOLO GRID
             if (i < GRID_W * GRID_H) {
                 const gx = (i % GRID_W) / GRID_W;
                 const gy = Math.floor(i / GRID_W) / GRID_H;
-                // Центрируем и масштабируем сетку (10x7.5)
                 shapes.holo.push((gx - 0.5) * 12, -(gy - 0.5) * 9, 0);
             } else {
-                // Лишние частицы прячем
                 shapes.holo.push(0, 0, 99999);
             }
 
-            // Init Colors
             if (i < CONFIG.count / 2) colorObj.setHSL(0.5 + Math.random()*0.1, 1.0, 0.6); 
             else colorObj.setHSL(0.8 + Math.random()*0.1, 1.0, 0.6); 
             colors[i*3] = colorObj.r; colors[i*3+1] = colorObj.g; colors[i*3+2] = colorObj.b;
@@ -346,7 +420,7 @@
         );
         scene.add(cursor); cursor.visible = false;
 
-        // --- OBJ LOADER (RANDOM SAMPLING) ---
+        // --- OBJ LOADER ---
         const objLoader = new OBJLoader();
         document.getElementById('obj-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -425,14 +499,12 @@
             }
         });
 
-        // --- HOLOGRAM VIDEO HELPERS ---
         const videoElement = document.getElementById('video-feed');
         const hiddenCanvas = document.createElement('canvas');
         hiddenCanvas.width = GRID_W;
         hiddenCanvas.height = GRID_H;
         const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
 
-        // --- UI HANDLERS ---
         const raycaster = new THREE.Raycaster();
         const drawPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
@@ -471,7 +543,7 @@
                     particles.rotation.set(0,0,0);
                     STATE.pos.set(0,0,0);
                     STATE.vel.set(0,0,0);
-                    bloomPass.strength = 2.0; // Boost bloom for hologram
+                    bloomPass.strength = 2.0; 
                 } else {
                     CONFIG.isHolo = false;
                     CONFIG.shape = s;
@@ -498,7 +570,6 @@
             }
         }
 
-        // --- INPUT HANDLING ---
         function updatePointer(x, y) {
             STATE.mouse.x = (x / window.innerWidth) * 2 - 1;
             STATE.mouse.y = -(y / window.innerHeight) * 2 + 1;
@@ -535,7 +606,6 @@
             const posAttr = geometry.attributes.position;
             const colAttr = geometry.attributes.color;
 
-            // --- HOLOGRAPHIC MODE LOGIC ---
             if (CONFIG.isHolo && videoElement.readyState === 4) {
                 hiddenCtx.drawImage(videoElement, 0, 0, GRID_W, GRID_H);
                 const frame = hiddenCtx.getImageData(0, 0, GRID_W, GRID_H).data;
@@ -544,12 +614,10 @@
                 for(let i=0; i<CONFIG.count; i++) {
                     const ix = i * 3;
                     if (i >= GRID_W * GRID_H) {
-                        // Hide extra particles
                         posAttr.array[ix] = 0; posAttr.array[ix+1] = 0; posAttr.array[ix+2] = 99999;
                         continue;
                     }
 
-                    // Map grid index to pixels (Flip X because webcam is mirrored)
                     const row = Math.floor(i / GRID_W);
                     const col = i % GRID_W;
                     const pixelIdx = (row * GRID_W + (GRID_W - 1 - col)) * 4;
@@ -558,29 +626,25 @@
                     const g = frame[pixelIdx+1];
                     const b = frame[pixelIdx+2];
 
-                    // Brightness to Depth mapping
-                    const brightness = (r + g + b) / 765.0; // 0..1
-                    const depth = brightness * 3.0; // Depth factor
+                    const brightness = (r + g + b) / 765.0; 
+                    const depth = brightness * 3.0; 
 
                     let tx = targetShape[ix];
                     let ty = targetShape[ix+1];
                     let tz = depth;
 
-                    // Hand Interaction (Push particles)
                     const dx = tx - STATE.smoothHand.x;
                     const dy = ty - STATE.smoothHand.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < 2.0) {
                         const force = (2.0 - dist) * 2.0;
-                        tz -= force; // Push back
+                        tz -= force; 
                     }
 
-                    // Morphing
                     posAttr.array[ix] += (tx - posAttr.array[ix]) * 0.2;
                     posAttr.array[ix+1] += (ty - posAttr.array[ix+1]) * 0.2;
                     posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.2;
 
-                    // Color mapping
                     colAttr.array[ix] = r/255;
                     colAttr.array[ix+1] = g/255;
                     colAttr.array[ix+2] = b/255;
@@ -588,15 +652,12 @@
                 posAttr.needsUpdate = true;
                 colAttr.needsUpdate = true;
                 
-                // Freeze scene movement
                 particles.rotation.set(0,0,0);
                 STATE.pos.set(0,0,0);
             } 
-            // --- STANDARD MODE LOGIC ---
             else {
                 const targetShape = shapes[CONFIG.shape];
                 
-                // Cursor Logic
                 if(CONFIG.appMode === 'DRAW') {
                     cursor.visible = true;
                     let inputPos = STATE.isMouseDrawing ? STATE.mouseWorld : (STATE.isHandDrawing ? STATE.smoothHand : null);
@@ -638,7 +699,6 @@
                     posAttr.array[ix+2] += (tz - posAttr.array[ix+2]) * 0.08;
 
                     if(CONFIG.useTexture && !CONFIG.isHolo && (CONFIG.shape === 'sphere' || CONFIG.shape === 'custom')) { 
-                         // keep texture colors
                          colAttr.array[ix] = STATE.originalColors[ix];
                          colAttr.array[ix+1] = STATE.originalColors[ix+1];
                          colAttr.array[ix+2] = STATE.originalColors[ix+2];
@@ -690,12 +750,24 @@
             composer.render();
         }
 
-        // --- MEDIAPIPE ---
         const uiMode = document.getElementById('mode-disp');
         const loader = document.getElementById('loader');
 
         function onResults(results) {
             if(loader) loader.style.display = 'none';
+
+            // --- DEBUG WINDOW RENDER ---
+            if(debugWin && !debugWin.closed && debugCtx && results.image) {
+                // Clear and Draw Video
+                debugCtx.drawImage(results.image, 0, 0, 640, 480);
+                // Draw Skeletons
+                if (results.multiHandLandmarks) {
+                    for (const landmarks of results.multiHandLandmarks) {
+                        drawSkeleton(landmarks, debugCtx);
+                    }
+                }
+            }
+
             const count = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
             
             let h1=null, x1=0, y1=0;
